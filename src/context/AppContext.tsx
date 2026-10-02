@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { Task, Lecture, TransitState, User, UserProfile, DayOfWeek, AuthSession } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { INITIAL_LECTURES, INITIAL_TASKS, INITIAL_TRANSIT_STATE } from '../utils/demoData';
+import { fetchAllSupabaseUsers, registerSupabaseUser, syncUserProfileToSupabase } from '../lib/supabase';
 
 export interface SubjectDebt {
   subject: string;
@@ -128,6 +129,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [dinnerDurationMinutes, setDinnerDurationMinutes] = useLocalStorage<number>('niti_dinner_mins', 30);
   const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
 
+  // Sync registered users from Supabase DB on mount
+  useEffect(() => {
+    fetchAllSupabaseUsers().then((remoteMap) => {
+      if (remoteMap && Object.keys(remoteMap).length > 0) {
+        setRegisteredAccounts((prev) => ({
+          ...remoteMap,
+          ...prev, // Local registered accounts take precedence
+        }));
+      }
+    });
+  }, []);
+
   const currentDay = useMemo<DayOfWeek>(() => {
     const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[new Date().getDay()];
@@ -206,18 +219,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!passTrim || passTrim.length < 4) return { success: false, error: 'Password must be at least 4 characters long.' };
 
     if (registeredAccounts[emailLower] || DEFAULT_ACCOUNTS[emailLower]) {
-      return { success: false, error: 'An account with this email already exists. Please Sign In instead.' };
+      return { success: false, error: 'An account with this email address already exists. Please Sign In instead.' };
     }
 
     const displayName = name?.trim() || emailLower.split('@')[0];
+    const role: 'admin' | 'student' = emailLower.includes('admin') || emailLower === 'tanaymishra30@gmail.com' ? 'admin' : 'student';
+
     const newAcc: RegisteredAccount = {
       password: passTrim,
       name: displayName,
       college: 'Engineering Institute',
-      role: emailLower.includes('admin') || emailLower === 'tanaymishra30@gmail.com' ? 'admin' : 'student',
+      role,
     };
 
     setRegisteredAccounts((prev) => ({ ...prev, [emailLower]: newAcc }));
+
+    // Async save to Supabase users table
+    registerSupabaseUser({
+      id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      email: emailLower,
+      name: displayName,
+      password: passTrim,
+      role,
+    });
 
     const session: AuthSession = {
       email: emailLower,
@@ -231,7 +255,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: displayName,
       targetBedtime: '23:30',
       commuteTimeMins: 45,
-      decompressionBufferMins: 45,
+      decompressionBufferMins: 30,
       weeklyTimetable: [
         { day: 'Monday', isRestDay: false, subjects: ['DSP', 'CN'] },
         { day: 'Tuesday', isRestDay: false, subjects: ['OS', 'DBMS'] },
@@ -329,6 +353,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Zero out initial tasks and debt for fresh accounts
     setTasks([]);
     setStudyDebt(0);
+
+    if (authSession?.email) {
+      syncUserProfileToSupabase(authSession.email, profile);
+    }
 
     // Populate today's lectures from weeklyTimetable for currentDay
     const todaySched = profile.weeklyTimetable.find((d) => d.day === currentDay);

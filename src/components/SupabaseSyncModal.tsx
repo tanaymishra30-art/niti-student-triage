@@ -8,11 +8,32 @@ interface SupabaseSyncModalProps {
   onClose: () => void;
 }
 
-const QUICK_SQL_SCRIPT = `-- NITI: QUICK SUPABASE TABLE CREATION SCRIPT
+const QUICK_SQL_SCRIPT = `-- NITI: COMPLETE SUPABASE TABLE CREATION SCRIPT
 -- Paste in Supabase SQL Editor & click RUN!
+
+CREATE TABLE IF NOT EXISTS public.users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'student',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+  email TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  target_bedtime TEXT DEFAULT '23:30',
+  commute_time_mins INT DEFAULT 45,
+  decompression_buffer_mins INT DEFAULT 30,
+  weekly_timetable JSONB,
+  has_onboarded BOOLEAN DEFAULT FALSE,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 CREATE TABLE IF NOT EXISTS public.tasks (
   id TEXT PRIMARY KEY,
+  user_id TEXT,
   title TEXT NOT NULL,
   subject TEXT NOT NULL DEFAULT 'General',
   duration INT NOT NULL DEFAULT 45,
@@ -44,6 +65,8 @@ CREATE TABLE IF NOT EXISTS public.transit_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lectures DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transit_logs DISABLE ROW LEVEL SECURITY;`;
