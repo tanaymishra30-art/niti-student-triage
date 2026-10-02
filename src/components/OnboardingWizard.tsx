@@ -30,6 +30,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [decompressionBufferMins, setDecompressionBufferMins] = useState(30);
 
   // Step 3: Timetable Matrix
+  const [weekendPair, setWeekendPair] = useState<'Sat-Sun' | 'Fri-Sat' | 'Thu-Fri' | 'Sun-Mon'>('Sat-Sun');
   const [timetable, setTimetable] = useState<WeeklyScheduleDay[]>(DEFAULT_TIMETABLE);
   const [subjectInputs, setSubjectInputs] = useState<Record<string, string>>({
     Monday: '',
@@ -37,7 +38,28 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     Wednesday: '',
     Thursday: '',
     Friday: '',
+    Saturday: '',
+    Sunday: '',
   });
+
+  const handleWeekendPairChange = (pair: 'Sat-Sun' | 'Fri-Sat' | 'Thu-Fri' | 'Sun-Mon') => {
+    setWeekendPair(pair);
+    let restDays: DayOfWeek[] = ['Saturday', 'Sunday'];
+    if (pair === 'Fri-Sat') restDays = ['Friday', 'Saturday'];
+    if (pair === 'Thu-Fri') restDays = ['Thursday', 'Friday'];
+    if (pair === 'Sun-Mon') restDays = ['Sunday', 'Monday'];
+
+    setTimetable((prev) =>
+      prev.map((d) => {
+        const isRest = restDays.includes(d.day);
+        return {
+          ...d,
+          isRestDay: isRest,
+          subjects: isRest ? [] : (d.subjects.length > 0 ? d.subjects : ['DSP', 'CN']),
+        };
+      })
+    );
+  };
 
   const handleAddSubject = (day: DayOfWeek) => {
     const inputVal = (subjectInputs[day] || '').trim();
@@ -354,8 +376,37 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               </p>
             </div>
 
+            {/* Weekend Pair Selector */}
+            <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-200 font-bold font-sans">Select 2 Consecutive Rest / Weekend Days:</span>
+                <span className="text-emerald-400 font-mono text-[11px] font-bold">{weekendPair}</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: 'Sat-Sun', label: 'Sat & Sun 🌴' },
+                  { id: 'Fri-Sat', label: 'Fri & Sat 🌴' },
+                  { id: 'Thu-Fri', label: 'Thu & Fri 🌴' },
+                  { id: 'Sun-Mon', label: 'Sun & Mon 🌴' },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => handleWeekendPairChange(opt.id as any)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition-all ${
+                      weekendPair === opt.id
+                        ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-400 shadow'
+                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Timetable List Grid */}
-            <div className="space-y-3 max-h-[290px] sm:max-h-[360px] overflow-y-auto pr-1 text-xs font-mono scrollbar-thin">
+            <div className="space-y-3 max-h-[250px] sm:max-h-[320px] overflow-y-auto pr-1 text-xs font-mono scrollbar-thin">
               {timetable.map((dayItem) => {
                 const isRest = dayItem.isRestDay;
 

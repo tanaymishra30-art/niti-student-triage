@@ -91,7 +91,8 @@ interface AppContextType {
   toggleLectureStatus: (id: string) => void;
   updateLectureFocus: (id: string, rating: number) => void;
   editLecture: (lecture: Lecture) => void;
-  addLecture: (lecture: Omit<Lecture, 'id'>) => void;
+  addLecture: (lecture: Omit<Lecture, 'id'>, scope?: 'today' | 'all') => void;
+  deleteLecture: (id: string, scope?: 'today' | 'all') => void;
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
   addTasks: (newTasks: Task[]) => void;
   editTask: (task: Task) => void;
@@ -616,12 +617,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const addLecture = (lectureData: Omit<Lecture, 'id'>) => {
+  const addLecture = (lectureData: Omit<Lecture, 'id'>, scope: 'today' | 'all' = 'today') => {
     const newLecture: Lecture = {
       ...lectureData,
       id: `lec-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
     };
     setLectures((prev) => [...prev, newLecture]);
+
+    if (scope === 'all' && userProfile) {
+      const updatedTimetable = userProfile.weeklyTimetable.map((dayItem) => {
+        if (dayItem.day === currentDay) {
+          return {
+            ...dayItem,
+            subjects: [...dayItem.subjects, lectureData.name],
+          };
+        }
+        return dayItem;
+      });
+
+      const updatedProfile = { ...userProfile, weeklyTimetable: updatedTimetable };
+      setUserProfile(updatedProfile);
+      if (authSession?.email) {
+        syncUserProfileToSupabase(authSession.email, updatedProfile);
+      }
+    }
+  };
+
+  const deleteLecture = (id: string, scope: 'today' | 'all' = 'today') => {
+    const target = lectures.find((l) => l.id === id);
+    setLectures((prev) => prev.filter((l) => l.id !== id));
+
+    if (scope === 'all' && target && userProfile) {
+      const updatedTimetable = userProfile.weeklyTimetable.map((dayItem) => {
+        if (dayItem.day === currentDay) {
+          return {
+            ...dayItem,
+            subjects: dayItem.subjects.filter((s) => s.toLowerCase() !== target.name.toLowerCase()),
+          };
+        }
+        return dayItem;
+      });
+
+      const updatedProfile = { ...userProfile, weeklyTimetable: updatedTimetable };
+      setUserProfile(updatedProfile);
+      if (authSession?.email) {
+        syncUserProfileToSupabase(authSession.email, updatedProfile);
+      }
+    }
   };
 
   // Task handlers
@@ -774,6 +816,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateLectureFocus,
         editLecture,
         addLecture,
+        deleteLecture,
         addTask,
         addTasks,
         editTask,
