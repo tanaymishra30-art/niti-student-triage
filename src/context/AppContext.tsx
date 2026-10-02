@@ -68,6 +68,7 @@ interface AppContextType {
   login: (email: string, password: string) => { success: boolean; error?: string };
   signup: (email: string, password: string, name?: string) => { success: boolean; error?: string };
   googleLogin: () => void;
+  guestLogin: () => void;
   logout: () => void;
   activeView: ViewType;
   setActiveView: (view: ViewType) => void;
@@ -280,6 +281,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       loggedInAt: Date.now(),
       hasOnboarded: Boolean(userProfile?.hasOnboarded),
     });
+    setActiveView('overview');
+  };
+
+  const guestLogin = () => {
+    const guestId = Date.now();
+    const guestEmail = `guest.${guestId}@niti.edu`;
+
+    const session: AuthSession = {
+      email: guestEmail,
+      isLoggedIn: true,
+      token: `guest-token-${guestId}`,
+      loggedInAt: Date.now(),
+    };
+
+    setAuthSession(session);
+    setUserProfile(null);
+    setTasks([]);
+    setLectures([]);
+    setStudyDebt(0);
+    setIsHolidayMode(false);
+    setTransitState(INITIAL_TRANSIT_STATE);
+
+    setUser({
+      id: `guest-user-${guestId}`,
+      name: 'Guest Student',
+      email: guestEmail,
+      college: 'Guest Academy',
+      role: 'student',
+      isAdmin: false,
+      loggedInAt: Date.now(),
+      hasOnboarded: false,
+    });
+
     setActiveView('overview');
   };
 
@@ -599,6 +633,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         signup,
         googleLogin,
+        guestLogin,
         logout,
         activeView,
         setActiveView,
