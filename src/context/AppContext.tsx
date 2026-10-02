@@ -24,11 +24,39 @@ export interface TriageResult {
 
 export type ViewType = 'overview' | 'transit' | 'tasks' | 'triage';
 
+interface RegisteredAccount {
+  password: string;
+  name: string;
+  college: string;
+  role: 'admin' | 'student';
+}
+
+const DEFAULT_ACCOUNTS: Record<string, RegisteredAccount> = {
+  'tanaymishra30@gmail.com': {
+    password: 'admin123',
+    name: 'Tanay Mishra (Admin)',
+    college: 'Engineering Institute',
+    role: 'admin',
+  },
+  'admin@niti.edu': {
+    password: 'admin123',
+    name: 'System Admin',
+    college: 'Niti Admin Dept',
+    role: 'admin',
+  },
+  'demo.student@niti.edu': {
+    password: 'student123',
+    name: 'Demo Student',
+    college: 'IIT / NIT Engineering Dept',
+    role: 'student',
+  },
+};
+
 interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, name: string, college?: string, role?: 'admin' | 'student') => void;
+  login: (email: string, password: string, name?: string, college?: string, isSignUp?: boolean) => { success: boolean; error?: string };
   guestLogin: () => void;
   logout: () => void;
   activeView: ViewType;
@@ -84,6 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loggedInAt: Date.now(),
   });
 
+  const [registeredAccounts, setRegisteredAccounts] = useLocalStorage<Record<string, RegisteredAccount>>('niti_registered_accounts', {});
   const [activeView, setActiveView] = useLocalStorage<ViewType>('niti_active_view', 'overview');
   const [transitState, setTransitState] = useLocalStorage<TransitState>('niti_transit_state', INITIAL_TRANSIT_STATE);
   const [tasks, setTasks] = useLocalStorage<Task[]>('niti_tasks', INITIAL_TASKS);
@@ -107,23 +136,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = (
     email: string,
-    name: string,
+    password: string,
+    name?: string,
     college: string = 'Engineering Department',
-    role: 'admin' | 'student' = 'student'
-  ) => {
-    const emailLower = email.toLowerCase();
-    const isAdminUser = role === 'admin' || emailLower === 'tanaymishra30@gmail.com' || emailLower.includes('admin');
+    isSignUp: boolean = false
+  ): { success: boolean; error?: string } => {
+    const emailLower = email.trim().toLowerCase();
+    const passTrim = password.trim();
 
-    setUser({
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      college,
-      role: isAdminUser ? 'admin' : 'student',
-      isAdmin: isAdminUser,
-      loggedInAt: Date.now(),
-    });
-    setActiveView('overview');
+    if (!emailLower) {
+      return { success: false, error: 'Please enter a valid email address.' };
+    }
+    if (!passTrim) {
+      return { success: false, error: 'Please enter your password.' };
+    }
+
+    const defaultAcc = DEFAULT_ACCOUNTS[emailLower];
+    const registeredAcc = registeredAccounts[emailLower];
+    const existingAcc = defaultAcc || registeredAcc;
+
+    if (isSignUp) {
+      if (existingAcc) {
+        return { success: false, error: 'An account with this email already exists. Please Sign In.' };
+      }
+      if (passTrim.length < 4) {
+        return { success: false, error: 'Password must be at least 4 characters long.' };
+      }
+
+      const studentName = (name && name.trim()) || emailLower.split('@')[0] || 'Student User';
+      const isAdminUser = emailLower === 'tanaymishra30@gmail.com' || emailLower.includes('admin');
+      const newAcc: RegisteredAccount = {
+        password: passTrim,
+        name: studentName,
+        college: college.trim() || 'Engineering Institute',
+        role: isAdminUser ? 'admin' : 'student',
+      };
+
+      setRegisteredAccounts((prev) => ({ ...prev, [emailLower]: newAcc }));
+
+      setUser({
+        id: `user-${Date.now()}`,
+        name: studentName,
+        email: emailLower,
+        college: newAcc.college,
+        role: newAcc.role,
+        isAdmin: isAdminUser,
+        loggedInAt: Date.now(),
+      });
+      setActiveView('overview');
+      return { success: true };
+    } else {
+      // Sign In Flow
+      if (!existingAcc) {
+        return { success: false, error: 'No account found with this email. Please switch to "Create Account" tab to register.' };
+      }
+
+      const isPasswordValid =
+        existingAcc.password === passTrim ||
+        (emailLower === 'tanaymishra30@gmail.com' && (passTrim === 'admin' || passTrim === 'admin123')) ||
+        (emailLower.endsWith('@niti.edu') && (passTrim === 'student' || passTrim === 'student123'));
+
+      if (!isPasswordValid) {
+        return { success: false, error: 'Incorrect password. Please verify your credentials and try again.' };
+      }
+
+      const isAdminUser = existingAcc.role === 'admin' || emailLower === 'tanaymishra30@gmail.com' || emailLower.includes('admin');
+      setUser({
+        id: `user-${Date.now()}`,
+        name: existingAcc.name,
+        email: emailLower,
+        college: existingAcc.college,
+        role: isAdminUser ? 'admin' : 'student',
+        isAdmin: isAdminUser,
+        loggedInAt: Date.now(),
+      });
+      setActiveView('overview');
+      return { success: true };
+    }
   };
 
   const guestLogin = () => {

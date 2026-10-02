@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Zap, Lock, Mail, User as UserIcon, Building, ArrowRight, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Zap, Lock, Mail, User as UserIcon, Building, ArrowRight, Sparkles, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const LoginView: React.FC = () => {
@@ -9,13 +9,30 @@ export const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [college, setCollege] = useState('IIT / NIT Engineering Dept');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleTabSwitch = (signUp: boolean) => {
+    setIsSignUp(signUp);
+    setErrorMsg(null);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    setErrorMsg(null);
 
-    const studentName = name.trim() || email.split('@')[0] || 'Student User';
-    login(email.trim(), studentName, college.trim());
+    if (!email.trim()) {
+      setErrorMsg('Please enter your email address.');
+      return;
+    }
+    if (!password.trim()) {
+      setErrorMsg('Please enter your password.');
+      return;
+    }
+
+    const res = login(email.trim(), password.trim(), name.trim(), college.trim(), isSignUp);
+    if (!res.success && res.error) {
+      setErrorMsg(res.error);
+    }
   };
 
   return (
@@ -51,7 +68,7 @@ export const LoginView: React.FC = () => {
           <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 text-xs font-mono">
             <button
               type="button"
-              onClick={() => setIsSignUp(false)}
+              onClick={() => handleTabSwitch(false)}
               className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
                 !isSignUp ? 'bg-slate-800 text-emerald-400 border border-slate-700 shadow' : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -60,7 +77,7 @@ export const LoginView: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setIsSignUp(true)}
+              onClick={() => handleTabSwitch(true)}
               className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
                 isSignUp ? 'bg-slate-800 text-emerald-400 border border-slate-700 shadow' : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -68,6 +85,14 @@ export const LoginView: React.FC = () => {
               Create Account
             </button>
           </div>
+
+          {/* Error Message Display */}
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs font-mono flex items-start space-x-2 animate-fadeIn">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -132,6 +157,11 @@ export const LoginView: React.FC = () => {
                   className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl py-2.5 pl-9 pr-3 text-slate-100 placeholder-slate-500 outline-none transition-all font-mono"
                 />
               </div>
+              {!isSignUp && (
+                <p className="text-[10px] text-slate-500 font-mono mt-1">
+                  Default Admin: <code className="text-amber-400">tanaymishra30@gmail.com</code> / Pass: <code className="text-amber-400">admin123</code>
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
