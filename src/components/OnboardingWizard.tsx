@@ -355,7 +355,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             </div>
 
             {/* Timetable List Grid */}
-            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 text-xs font-mono scrollbar-thin">
+            <div className="space-y-3 max-h-[290px] sm:max-h-[360px] overflow-y-auto pr-1 text-xs font-mono scrollbar-thin">
               {timetable.map((dayItem) => {
                 const isRest = dayItem.isRestDay;
 

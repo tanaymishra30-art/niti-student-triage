@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database, Shield } from 'lucide-react';
+import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database, Shield, UserPlus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SupabaseSyncModal } from './SupabaseSyncModal';
+import { ConvertGuestModal } from './ConvertGuestModal';
 import { getSavedSupabaseConfig } from '../lib/supabase';
 import { formatHours } from '../utils/formatTime';
 
 export const Header: React.FC = () => {
-  const { user, userProfile, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen, isAdmin } = useApp();
+  const { user, userProfile, authSession, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen, isAdmin } = useApp();
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
 
   const isSupabaseConnected = Boolean(getSavedSupabaseConfig());
   const displayName = userProfile?.name || user?.name || 'Student';
+  const isGuest = Boolean(user?.email?.startsWith('guest.') || authSession?.email?.startsWith('guest.'));
 
   return (
     <header className="border-b border-slate-800 bg-[#0F172A]/90 sticky top-0 z-30 backdrop-blur-md">
@@ -97,6 +100,18 @@ export const Header: React.FC = () => {
             <span className="hidden md:inline">Reset</span>
           </button>
 
+          {/* Guest Account Conversion Button */}
+          {isGuest && (
+            <button
+              onClick={() => setIsConvertModalOpen(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-mono font-medium transition-all"
+              title="Save guest profile to a permanent account"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Save Account 💾</span>
+            </button>
+          )}
+
           {/* User Profile Pill & Logout */}
           <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-700/80 rounded-xl p-1 pl-2.5 text-xs">
             <div className="flex items-center space-x-1.5 text-slate-200 font-medium font-sans max-w-[140px] sm:max-w-[190px] truncate">
@@ -122,6 +137,11 @@ export const Header: React.FC = () => {
       {/* Supabase Database Connection Modal (Admin Only) */}
       {isAdmin && (
         <SupabaseSyncModal isOpen={isSupabaseModalOpen} onClose={() => setIsSupabaseModalOpen(false)} />
+      )}
+
+      {/* Guest Account Conversion Modal */}
+      {isGuest && (
+        <ConvertGuestModal isOpen={isConvertModalOpen} onClose={() => setIsConvertModalOpen(false)} />
       )}
     </header>
   );

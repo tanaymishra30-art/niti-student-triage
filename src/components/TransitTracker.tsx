@@ -134,6 +134,18 @@ export const TransitTracker: React.FC = () => {
               </span>
             </div>
 
+            {(transitState.commuteDurationMinutes || 0) > 180 && (
+              <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-300 text-[11px] font-mono flex items-center justify-between">
+                <span>⚠️ Commute exceeds 3h (forgot tap?)</span>
+                <button
+                  onClick={resetTransit}
+                  className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30 text-[10px]"
+                >
+                  Cap Time
+                </button>
+              </div>
+            )}
+
             <div className="pt-2 flex items-center space-x-2">
               <button
                 onClick={() => setIsTriageModalOpen(true)}

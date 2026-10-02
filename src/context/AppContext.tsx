@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect } from '
 import { Task, Lecture, TransitState, User, UserProfile, DayOfWeek, AuthSession } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { INITIAL_LECTURES, INITIAL_TASKS, INITIAL_TRANSIT_STATE } from '../utils/demoData';
-import { fetchAllSupabaseUsers, registerSupabaseUser, syncUserProfileToSupabase } from '../lib/supabase';
+import { fetchAllSupabaseUsers, registerSupabaseUser, syncUserProfileToSupabase, fetchSupabaseUserByEmail, fetchUserProfileFromSupabase } from '../lib/supabase';
 
 export interface SubjectDebt {
   subject: string;
@@ -66,10 +66,11 @@ interface AppContextType {
   isHolidayMode: boolean;
   toggleHolidayMode: () => void;
   currentDay: DayOfWeek;
-  login: (email: string, password: string) => { success: boolean; error?: string };
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
   signup: (email: string, password: string, name?: string) => { success: boolean; error?: string };
   googleLogin: () => void;
   guestLogin: () => void;
+  convertGuestToAccount: (email: string, password: string, name: string) => { success: boolean; error?: string };
   logout: () => void;
   activeView: ViewType;
   setActiveView: (view: ViewType) => void;
@@ -165,7 +166,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsHolidayMode((prev) => !prev);
   };
 
-  const login = (email: string, password: string): { success: boolean; error?: string } => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const emailLower = email.trim().toLowerCase();
     const passTrim = password.trim();
 
@@ -173,8 +174,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!passTrim) return { success: false, error: 'Please enter your password.' };
 
     const defaultAcc = DEFAULT_ACCOUNTS[emailLower];
-    const registeredAcc = registeredAccounts[emailLower];
-    const existingAcc = defaultAcc || registeredAcc;
+    let existingAcc = defaultAcc || registeredAccounts[emailLower];
+
+    // Fast remote lookup to Supabase users table if not in local cache
+    if (!existingAcc) {
+      const remoteUser = await fetchSupabaseUserByEmail(emailLower);
+      if (remoteUser) {
+        existingAcc = {
+          password: remoteUser.password,
+          name: remoteUser.name,
+          college: 'Engineering Institute',
+          role: remoteUser.role,
+        };
+        setRegisteredAccounts((prev) => ({ ...prev, [emailLower]: existingAcc! }));
+      }
+    }
 
     if (!existingAcc) {
       return { success: false, error: 'No account found with this email address. Please Create an Account first.' };
@@ -198,15 +212,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setAuthSession(session);
 
+    // Sync remote profile if logging in on new device
+    const remoteProfile = await fetchUserProfileFromSupabase(emailLower);
+    if (remoteProfile) {
+      setUserProfile(remoteProfile);
+    }
+
     setUser({
       id: `user-${Date.now()}`,
-      name: userProfile?.name || existingAcc?.name || emailLower.split('@')[0],
+      name: remoteProfile?.name || userProfile?.name || existingAcc?.name || emailLower.split('@')[0],
       email: emailLower,
       college: existingAcc?.college || 'Engineering Institute',
       role: existingAcc?.role || (emailLower.includes('admin') ? 'admin' : 'student'),
       isAdmin: emailLower.includes('admin') || existingAcc?.role === 'admin',
       loggedInAt: Date.now(),
-      hasOnboarded,
+      hasOnboarded: remoteProfile ? remoteProfile.hasOnboarded : hasOnboarded,
     });
 
     setActiveView('overview');
@@ -341,6 +361,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     setActiveView('overview');
+  };
+
+  const convertGuestToAccount = (email: string, password: string, name: string): { success: boolean; error?: string } => {
+    const emailLower = email.trim().toLowerCase();
+    const passTrim = password.trim();
+
+    if (!emailLower) return { success: false, error: 'Please enter a valid email address.' };
+    if (!passTrim || passTrim.length < 6) return { success: false, error: 'Password must be at least 6 characters long.' };
+    if (!name.trim()) return { success: false, error: 'Please enter your full name.' };
+
+    if (registeredAccounts[emailLower] || DEFAULT_ACCOUNTS[emailLower]) {
+      return { success: false, error: 'An account with this email address already exists. Please use a different email.' };
+    }
+
+    const displayName = name.trim();
+    const role: 'admin' | 'student' = emailLower.includes('admin') || emailLower === 'tanaymishra30@gmail.com' ? 'admin' : 'student';
+
+    const newAcc: RegisteredAccount = {
+      password: passTrim,
+      name: displayName,
+      college: 'Engineering Institute',
+      role,
+    };
+
+    setRegisteredAccounts((prev) => ({ ...prev, [emailLower]: newAcc }));
+
+    registerSupabaseUser({
+      id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      email: emailLower,
+      name: displayName,
+      password: passTrim,
+      role,
+    });
+
+    const session: AuthSession = {
+      email: emailLower,
+      isLoggedIn: true,
+      token: `token-${Date.now()}`,
+      loggedInAt: Date.now(),
+    };
+
+    setAuthSession(session);
+
+    const updatedProfile: UserProfile = {
+      name: displayName,
+      targetBedtime: userProfile?.targetBedtime || '23:30',
+      commuteTimeMins: userProfile?.commuteTimeMins || 45,
+      decompressionBufferMins: userProfile?.decompressionBufferMins || 30,
+      weeklyTimetable: userProfile?.weeklyTimetable || [],
+      hasOnboarded: true,
+      onboardedAt: Date.now(),
+    };
+
+    setUserProfile(updatedProfile);
+    syncUserProfileToSupabase(emailLower, updatedProfile);
+
+    setUser({
+      id: `user-${Date.now()}`,
+      name: displayName,
+      email: emailLower,
+      college: 'Engineering Institute',
+      role: newAcc.role,
+      isAdmin: newAcc.role === 'admin',
+      loggedInAt: Date.now(),
+      hasOnboarded: true,
+    });
+
+    return { success: true };
   };
 
   const logout = () => {
@@ -664,6 +752,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         signup,
         googleLogin,
         guestLogin,
+        convertGuestToAccount,
         logout,
         activeView,
         setActiveView,

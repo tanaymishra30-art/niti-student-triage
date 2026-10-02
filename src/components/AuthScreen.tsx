@@ -25,7 +25,7 @@ export const AuthScreen: React.FC = () => {
     setConfirmPassword('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
@@ -65,7 +65,7 @@ export const AuthScreen: React.FC = () => {
         return;
       }
 
-      const res = login(emailTrim, passTrim);
+      const res = await login(emailTrim, passTrim);
       if (!res.success && res.error) {
         setErrorMsg(res.error);
       }
