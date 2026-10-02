@@ -14,6 +14,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) =
   const [duration, setDuration] = useState(45);
   const [priority, setPriority] = useState<'P0' | 'P1' | 'P2'>('P1');
   const [dueDate, setDueDate] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string>('Assignment');
 
   useEffect(() => {
     if (isOpen) {
@@ -36,6 +37,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) =
       duration: Number(duration),
       priority,
       dueDate: dueDate || undefined,
+      tags: selectedTag ? [selectedTag] : undefined,
       completed: false,
     });
 
@@ -102,13 +104,23 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) =
           </div>
 
           <div>
-            <label className="block text-slate-300 mb-1 font-mono">Target Due Date (Optional)</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono focus:border-emerald-500 outline-none"
-            />
+            <label className="block text-slate-300 mb-1 font-mono">Category Tag</label>
+            <div className="flex flex-wrap gap-1.5">
+              {['Assignment', 'Lab', 'Exam', 'Project', 'Revision'].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setSelectedTag(tag)}
+                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-mono transition-all ${
+                    selectedTag === tag
+                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500 font-bold'
+                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

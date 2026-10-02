@@ -2,6 +2,7 @@ import React from 'react';
 import { Gauge, Clock, Layers, CheckCircle2, TrendingUp, Sparkles, AlertTriangle, ArrowRight, ShieldCheck, PieChart, BookOpen, Navigation, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatHours } from '../utils/formatTime';
+import { WeeklyCalendarGrid } from '../components/WeeklyCalendarGrid';
 
 export const OverviewView: React.FC = () => {
   const {
@@ -412,6 +413,9 @@ export const OverviewView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Card D: Master Weekly Timetable Matrix */}
+      <WeeklyCalendarGrid />
 
       {/* Navigation Quick Jumps Bar */}
       <div className="bg-[#1E293B]/90 rounded-2xl p-5 border border-slate-700/60 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">

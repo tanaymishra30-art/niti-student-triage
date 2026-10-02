@@ -65,12 +65,20 @@ export function parseWhatsAppTextToTasks(text: string): Task[] {
     // Capitalize first letter
     title = title.charAt(0).toUpperCase() + title.slice(1);
 
+    // Determine tag
+    let tags: string[] = ['Assignment'];
+    if (upper.includes('LAB')) tags = ['Lab'];
+    else if (upper.includes('EXAM') || upper.includes('QUIZ')) tags = ['Exam'];
+    else if (upper.includes('PROJECT')) tags = ['Project'];
+    else if (upper.includes('READ') || upper.includes('REVISE')) tags = ['Revision'];
+
     parsedTasks.push({
       id: `task-shredded-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 5)}`,
       title,
       subject,
       duration,
       priority,
+      tags,
       completed: false,
       createdAt: Date.now(),
     });

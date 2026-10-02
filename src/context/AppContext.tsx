@@ -98,6 +98,10 @@ interface AppContextType {
   editTask: (task: Task) => void;
   toggleTaskComplete: (id: string) => void;
   deleteTask: (id: string) => void;
+  themeColor: 'emerald' | 'indigo' | 'amber' | 'rose';
+  setThemeColor: (theme: 'emerald' | 'indigo' | 'amber' | 'rose') => void;
+  exportNitiData: () => void;
+  importNitiData: (jsonStr: string) => { success: boolean; error?: string };
   resetDemoData: () => void;
   // Computed metrics & Analytics
   totalCollegeHours: number;
@@ -129,6 +133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [lectures, setLectures] = useLocalStorage<Lecture[]>('niti_lectures', []);
   const [targetBedtime, setTargetBedtime] = useLocalStorage<string>('niti_bedtime', '23:30');
   const [dinnerDurationMinutes, setDinnerDurationMinutes] = useLocalStorage<number>('niti_dinner_mins', 30);
+  const [themeColor, setThemeColor] = useLocalStorage<'emerald' | 'indigo' | 'amber' | 'rose'>('niti_theme_color', 'emerald');
   const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
 
   // Sync registered users from Supabase DB on mount
@@ -726,8 +731,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsHolidayMode(false);
     setTargetBedtime('23:30');
     setDinnerDurationMinutes(30);
+    setThemeColor('emerald');
     setActiveView('overview');
     setIsTriageModalOpen(false);
+  };
+
+  const exportNitiData = () => {
+    const backupData = {
+      appName: 'Niti Student Triage Engine',
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      userProfile,
+      tasks,
+      lectures,
+      targetBedtime,
+      dinnerDurationMinutes,
+      themeColor,
+    };
+    const jsonStr = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Niti_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importNitiData = (jsonStr: string): { success: boolean; error?: string } => {
+    try {
+      const data = JSON.parse(jsonStr);
+      if (!data || typeof data !== 'object') {
+        return { success: false, error: 'Invalid backup file format.' };
+      }
+
+      if (data.userProfile) setUserProfile(data.userProfile);
+      if (Array.isArray(data.tasks)) setTasks(data.tasks);
+      if (Array.isArray(data.lectures)) setLectures(data.lectures);
+      if (data.targetBedtime) setTargetBedtime(data.targetBedtime);
+      if (data.dinnerDurationMinutes) setDinnerDurationMinutes(data.dinnerDurationMinutes);
+      if (data.themeColor) setThemeColor(data.themeColor);
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to parse JSON backup file.' };
+    }
   };
 
   // Computed Metrics
@@ -844,6 +892,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         editTask,
         toggleTaskComplete,
         deleteTask,
+        themeColor,
+        setThemeColor,
+        exportNitiData,
+        importNitiData,
         resetDemoData,
         totalCollegeHours,
         totalTransitHours,

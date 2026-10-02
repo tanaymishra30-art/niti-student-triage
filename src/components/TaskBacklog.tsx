@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckSquare, Square, Plus, Trash2, ShieldAlert, Sparkles, Clock, Edit3 } from 'lucide-react';
+import { CheckSquare, Square, Plus, Trash2, ShieldAlert, Sparkles, Clock, Edit3, Search, Tag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Task } from '../types';
 import { AddTaskModal } from './AddTaskModal';
@@ -9,13 +9,29 @@ import { formatHours, formatMinutes } from '../utils/formatTime';
 export const TaskBacklog: React.FC = () => {
   const { tasks, toggleTaskComplete, deleteTask, totalPendingTaskHours } = useApp();
   const [filter, setFilter] = useState<'active' | 'all' | 'dropped' | 'completed'>('active');
+  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const filteredTasks = tasks.filter((t) => {
-    if (filter === 'active') return !t.completed && !t.droppedTonight;
-    if (filter === 'dropped') return t.droppedTonight && !t.completed;
-    if (filter === 'completed') return t.completed;
+    // Status filter
+    if (filter === 'active' && (t.completed || t.droppedTonight)) return false;
+    if (filter === 'dropped' && (!t.droppedTonight || t.completed)) return false;
+    if (filter === 'completed' && !t.completed) return false;
+
+    // Tag filter
+    if (tagFilter !== 'all' && (!t.tags || !t.tags.includes(tagFilter))) return false;
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const titleMatch = t.title.toLowerCase().includes(q);
+      const subjectMatch = t.subject.toLowerCase().includes(q);
+      const tagMatch = t.tags?.some((tag) => tag.toLowerCase().includes(q));
+      if (!titleMatch && !subjectMatch && !tagMatch) return false;
+    }
+
     return true;
   });
 
@@ -66,6 +82,37 @@ export const TaskBacklog: React.FC = () => {
           <Plus className="w-3.5 h-3.5" />
           <span>Add Task</span>
         </button>
+      </div>
+
+      {/* Search Bar & Tag Filter Chips */}
+      <div className="flex flex-col sm:flex-row items-center gap-2 mb-3">
+        <div className="relative w-full sm:w-1/2">
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+          <input
+            type="text"
+            placeholder="Search tasks or subjects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-700/80 rounded-xl py-1.5 pl-8 pr-3 text-xs text-slate-100 placeholder-slate-500 font-mono outline-none focus:border-indigo-500"
+          />
+        </div>
+
+        <div className="flex items-center space-x-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+          {['all', 'Assignment', 'Lab', 'Exam', 'Project', 'Revision'].map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setTagFilter(tag)}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono capitalize transition-all whitespace-nowrap ${
+                tagFilter === tag
+                  ? 'bg-indigo-500 text-slate-950 font-bold'
+                  : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+              }`}
+            >
+              {tag === 'all' ? 'All Tags' : `#${tag}`}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -138,6 +185,12 @@ export const TaskBacklog: React.FC = () => {
                     </span>
 
                     {getPriorityBadge(task.priority)}
+
+                    {task.tags && task.tags.map((t) => (
+                      <span key={t} className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                        #{t}
+                      </span>
+                    ))}
 
                     {task.droppedTonight && (
                       <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center">

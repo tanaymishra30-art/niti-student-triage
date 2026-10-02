@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database, Shield, UserPlus } from 'lucide-react';
+import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database, Shield, UserPlus, Palette } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SupabaseSyncModal } from './SupabaseSyncModal';
 import { ConvertGuestModal } from './ConvertGuestModal';
+import { BackupModal } from './BackupModal';
 import { getSavedSupabaseConfig } from '../lib/supabase';
 import { formatHours } from '../utils/formatTime';
 
@@ -10,6 +11,7 @@ export const Header: React.FC = () => {
   const { user, userProfile, authSession, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen, isAdmin } = useApp();
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
 
   const isSupabaseConnected = Boolean(getSavedSupabaseConfig());
   const displayName = userProfile?.name || user?.name || 'Student';
@@ -112,6 +114,16 @@ export const Header: React.FC = () => {
             </button>
           )}
 
+          {/* Theme & Backup Controls Button */}
+          <button
+            onClick={() => setIsBackupModalOpen(true)}
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono transition-all"
+            title="Theme customization & Data Backup"
+          >
+            <Palette className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden md:inline">Theme & Backup 🎨</span>
+          </button>
+
           {/* User Profile Pill & Logout */}
           <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-700/80 rounded-xl p-1 pl-2.5 text-xs">
             <div className="flex items-center space-x-1.5 text-slate-200 font-medium font-sans max-w-[140px] sm:max-w-[190px] truncate">
@@ -143,6 +155,9 @@ export const Header: React.FC = () => {
       {isGuest && (
         <ConvertGuestModal isOpen={isConvertModalOpen} onClose={() => setIsConvertModalOpen(false)} />
       )}
+
+      {/* Theme & Data Backup Modal */}
+      <BackupModal isOpen={isBackupModalOpen} onClose={() => setIsBackupModalOpen(false)} />
     </header>
   );
 };

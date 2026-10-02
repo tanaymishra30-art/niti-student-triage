@@ -21,6 +21,7 @@ export interface UserProfile {
   weeklyTimetable: WeeklyScheduleDay[];
   hasOnboarded: boolean;
   onboardedAt: number;
+  themeColor?: 'emerald' | 'indigo' | 'amber' | 'rose';
 }
 
 export interface User {
@@ -46,6 +47,7 @@ export interface Task {
   condensed?: boolean;
   originalDuration?: number;
   dueDate?: string;
+  tags?: string[];
   createdAt: number;
 }
 
