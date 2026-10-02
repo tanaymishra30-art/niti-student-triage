@@ -1,9 +1,14 @@
-import React from 'react';
-import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { SupabaseSyncModal } from './SupabaseSyncModal';
+import { getSavedSupabaseConfig } from '../lib/supabase';
 
 export const Header: React.FC = () => {
   const { user, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen } = useApp();
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+
+  const isSupabaseConnected = Boolean(getSavedSupabaseConfig());
 
   return (
     <header className="border-b border-slate-800 bg-[#0F172A]/90 sticky top-0 z-30 backdrop-blur-md">
@@ -32,6 +37,20 @@ export const Header: React.FC = () => {
         {/* Quick Metrics & Actions */}
         <div className="flex items-center space-x-2.5 sm:space-x-3">
           
+          {/* Supabase DB Sync Button */}
+          <button
+            onClick={() => setIsSupabaseModalOpen(true)}
+            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-mono transition-all ${
+              isSupabaseConnected
+                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+            }`}
+            title="Configure Supabase Database Sync"
+          >
+            <Database className={`w-3.5 h-3.5 ${isSupabaseConnected ? 'text-emerald-400' : 'text-slate-400'}`} />
+            <span className="hidden md:inline">{isSupabaseConnected ? 'Supabase Sync 🟢' : 'Connect DB'}</span>
+          </button>
+
           {/* Status Badge */}
           <div className="hidden lg:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 text-xs">
             <span className="relative flex h-2 w-2">
@@ -93,6 +112,9 @@ export const Header: React.FC = () => {
 
         </div>
       </div>
+
+      {/* Supabase Database Connection Modal */}
+      <SupabaseSyncModal isOpen={isSupabaseModalOpen} onClose={() => setIsSupabaseModalOpen(false)} />
     </header>
   );
 };
