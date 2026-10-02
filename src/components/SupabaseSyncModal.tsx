@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Database, CheckCircle2, AlertCircle, RefreshCw, Key, Link as LinkIcon, Code } from 'lucide-react';
+import { X, Database, CheckCircle2, AlertCircle, RefreshCw, Key, Link as LinkIcon, Code, Copy, Check } from 'lucide-react';
 import { testSupabaseConnection, getSavedSupabaseConfig, resetSupabaseClient, syncTasksToSupabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
 
@@ -7,6 +7,46 @@ interface SupabaseSyncModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const QUICK_SQL_SCRIPT = `-- NITI: QUICK SUPABASE TABLE CREATION SCRIPT
+-- Paste in Supabase SQL Editor & click RUN!
+
+CREATE TABLE IF NOT EXISTS public.tasks (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  subject TEXT NOT NULL DEFAULT 'General',
+  duration INT NOT NULL DEFAULT 45,
+  priority TEXT NOT NULL DEFAULT 'P1',
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  dropped_tonight BOOLEAN DEFAULT FALSE,
+  condensed BOOLEAN DEFAULT FALSE,
+  original_duration INT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.lectures (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  code TEXT NOT NULL,
+  time_slot TEXT NOT NULL,
+  duration_minutes INT NOT NULL DEFAULT 90,
+  status TEXT NOT NULL DEFAULT 'attended',
+  focus_rating INT NOT NULL DEFAULT 3,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.transit_logs (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  status TEXT NOT NULL DEFAULT 'idle',
+  left_college_time BIGINT,
+  home_time BIGINT,
+  commute_duration_minutes INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.tasks DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lectures DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transit_logs DISABLE ROW LEVEL SECURITY;`;
 
 export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, onClose }) => {
   const { tasks } = useApp();
@@ -17,6 +57,7 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
   const [statusMessage, setStatusMessage] = useState<{ success: boolean; text: string } | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<'config' | 'schema'>('config');
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     const config = getSavedSupabaseConfig();
@@ -56,7 +97,7 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
       setIsConnected(true);
       setTimeout(() => onClose(), 1500);
     } else {
-      setStatusMessage({ success: false, text: 'Credentials saved, but table sync failed. Did you run the SQL schema?' });
+      setStatusMessage({ success: false, text: 'Credentials saved! If table sync fails, copy the SQL Script from tab 2 and run it in Supabase SQL Editor.' });
     }
   };
 
@@ -67,6 +108,12 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
     setAnonKey('');
     setIsConnected(false);
     setStatusMessage({ success: true, text: 'Disconnected Supabase credentials. Reverted to Local Storage mode.' });
+  };
+
+  const handleCopySQL = () => {
+    navigator.clipboard.writeText(QUICK_SQL_SCRIPT);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2500);
   };
 
   return (
@@ -84,11 +131,11 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
                 <span>Supabase Database Sync</span>
                 {isConnected && (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Connected
+                    Connected 🟢
                   </span>
                 )}
               </h3>
-              <p className="text-xs text-slate-400">PostgreSQL Database Integration & Cloud Sync</p>
+              <p className="text-xs text-slate-400">PostgreSQL Database Integration & Table Creator</p>
             </div>
           </div>
 
@@ -106,7 +153,7 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
             }`}
           >
             <Database className="w-3.5 h-3.5" />
-            <span>Connection Config</span>
+            <span>1. Connection Config</span>
           </button>
           <button
             onClick={() => setActiveTab('schema')}
@@ -115,7 +162,7 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
             }`}
           >
             <Code className="w-3.5 h-3.5" />
-            <span>SQL Schema Script</span>
+            <span>2. Create Tables SQL</span>
           </button>
         </div>
 
@@ -127,7 +174,7 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
                 <LinkIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
                   type="text"
-                  placeholder="https://xyzcompany.supabase.co"
+                  placeholder="https://your-project.supabase.co"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-3 text-slate-100 font-mono focus:border-emerald-500 outline-none"
@@ -154,12 +201,12 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
               <div className={`p-3 rounded-xl border text-xs font-mono flex items-start space-x-2 ${
                 statusMessage.success
                   ? 'bg-emerald-950/30 border-emerald-900/50 text-emerald-300'
-                  : 'bg-rose-950/30 border-rose-900/50 text-rose-300'
+                  : 'bg-amber-950/30 border-amber-900/50 text-amber-300'
               }`}>
                 {statusMessage.success ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 )}
                 <span>{statusMessage.text}</span>
               </div>
@@ -200,27 +247,26 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
           </div>
         ) : (
           <div className="space-y-3 text-xs">
-            <p className="text-slate-300 leading-relaxed">
-              Copy and execute the official PostgreSQL schema script below in your Supabase project's <strong>SQL Editor</strong>:
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-slate-300 leading-relaxed font-sans">
+                Paste this script in your Supabase project's <strong>SQL Editor</strong> & click <strong>RUN</strong>:
+              </p>
 
-            <div className="p-3 bg-slate-950/90 rounded-xl border border-slate-800 max-h-48 overflow-y-auto font-mono text-[10px] text-emerald-300">
-              <pre>{`-- NITI SUPABASE DATABASE SCHEMA
-CREATE TABLE public.tasks (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  subject TEXT NOT NULL DEFAULT 'General',
-  duration INT NOT NULL DEFAULT 45,
-  priority TEXT NOT NULL,
-  completed BOOLEAN NOT NULL DEFAULT FALSE,
-  dropped_tonight BOOLEAN DEFAULT FALSE,
-  condensed BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);`}</pre>
+              <button
+                onClick={handleCopySQL}
+                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-xs font-mono transition-all flex items-center space-x-1 shrink-0"
+              >
+                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{isCopied ? 'Copied!' : 'Copy SQL Script'}</span>
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-950/90 rounded-xl border border-slate-800 max-h-56 overflow-y-auto font-mono text-[10px] text-emerald-300 selection:bg-emerald-500/30">
+              <pre>{QUICK_SQL_SCRIPT}</pre>
             </div>
 
             <p className="text-[11px] text-slate-400 font-mono">
-              The full schema file is available in your workspace at <code>supabase/schema.sql</code>.
+              Creates <code>tasks</code>, <code>lectures</code>, and <code>transit_logs</code> tables with zero friction.
             </p>
           </div>
         )}
