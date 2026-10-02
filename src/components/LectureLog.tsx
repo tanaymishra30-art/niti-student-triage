@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { BookOpen, Star, CheckCircle, XCircle, Clock, Plus, X } from 'lucide-react';
+import { BookOpen, Star, CheckCircle, XCircle, Clock, Plus, X, Sun, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatHours } from '../utils/formatTime';
 
 export const LectureLog: React.FC = () => {
-  const { lectures, toggleLectureStatus, updateLectureFocus, addLecture, totalCollegeHours } = useApp();
+  const { lectures, toggleLectureStatus, updateLectureFocus, addLecture, totalCollegeHours, isHoliday, toggleHolidayMode, currentDay } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -31,37 +32,67 @@ export const LectureLog: React.FC = () => {
   return (
     <div className="bg-[#1E293B]/90 rounded-xl p-5 border border-slate-700/60 shadow-lg space-y-4">
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header & Holiday Toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
         <div className="flex items-center space-x-2">
           <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
             <BookOpen className="w-4 h-4 text-indigo-400" />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-slate-100 tracking-wide font-sans">
-              Smart-Default Lecture Log
+              Daily Context & College Lectures
             </h2>
-            <p className="text-xs text-slate-400">Opt-out Attendance & Focus Tracking</p>
+            <p className="text-xs text-slate-400">Opt-out Attendance & Schedule ({currentDay})</p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1.5 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-800 text-xs font-mono">
-            <Clock className="w-3 h-3 text-indigo-400" />
-            <span className="text-slate-300">{totalCollegeHours}h logged</span>
-          </div>
-
+        <div className="flex items-center space-x-2 self-start sm:self-auto">
+          {/* Prominent Holiday Toggle Button */}
           <button
-            onClick={() => setIsAdding(!isAdding)}
-            className="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
-            title="Add Custom Lecture"
+            type="button"
+            onClick={toggleHolidayMode}
+            className={`px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center space-x-1.5 shadow-sm active:scale-95 ${
+              isHoliday
+                ? 'bg-amber-500 text-slate-950 border border-amber-400 font-extrabold'
+                : 'bg-slate-900 text-amber-300 border border-amber-500/30 hover:bg-slate-800 hover:border-amber-500/50'
+            }`}
           >
-            {isAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 text-indigo-400" />}
+            <span>🌴</span>
+            <span>{isHoliday ? 'Holiday Mode Active' : 'Declare Today a Holiday'}</span>
           </button>
+
+          {!isHoliday && (
+            <div className="flex items-center space-x-1.5 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-800 text-xs font-mono">
+              <Clock className="w-3 h-3 text-indigo-400" />
+              <span className="text-slate-300">{formatHours(totalCollegeHours)} logged</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Inline Add Form */}
+      {/* Holiday / Debt Recovery Mode UI */}
+      {isHoliday ? (
+        <div className="p-5 rounded-2xl bg-amber-950/20 border border-amber-900/40 space-y-3 text-center animate-fadeIn">
+          <div className="inline-flex p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+            <Sun className="w-6 h-6 text-amber-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-amber-300 font-sans">
+              🌴 It's a free day! Time to wipe out your Study Debt.
+            </h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              College lectures and transit dead-time are paused today. Full 8h study capacity allocated for debt recovery.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center">
+            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-semibold">
+              ⚡ Debt Recovery Mode Active • Max Capacity 8h
+            </span>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Inline Add Form */}
       {isAdding && (
         <form onSubmit={handleAddSubmit} className="p-3 bg-slate-900/80 border border-slate-700 rounded-lg space-y-2 text-xs">
           <div className="grid grid-cols-2 gap-2">
@@ -195,7 +226,9 @@ export const LectureLog: React.FC = () => {
           );
         })}
       </div>
+    </>
+  )}
 
-    </div>
+</div>
   );
 };

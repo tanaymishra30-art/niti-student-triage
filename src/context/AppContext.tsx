@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { Task, Lecture, TransitState, User } from '../types';
+import { Task, Lecture, TransitState, User, UserProfile, DayOfWeek } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { INITIAL_LECTURES, INITIAL_TASKS, INITIAL_TRANSIT_STATE } from '../utils/demoData';
 
@@ -56,6 +56,14 @@ interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  userProfile: UserProfile | null;
+  hasOnboarded: boolean;
+  completeOnboarding: (profile: UserProfile) => void;
+  resetOnboarding: () => void;
+  isHoliday: boolean;
+  isHolidayMode: boolean;
+  toggleHolidayMode: () => void;
+  currentDay: DayOfWeek;
   login: (email: string, password: string, name?: string, college?: string, isSignUp?: boolean) => { success: boolean; error?: string };
   guestLogin: () => void;
   logout: () => void;
@@ -102,15 +110,9 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useLocalStorage<User | null>('niti_user_session', {
-    id: 'user-admin-1',
-    name: 'Tanay Mishra (Admin)',
-    email: 'tanaymishra30@gmail.com',
-    college: 'Engineering Institute',
-    role: 'admin',
-    isAdmin: true,
-    loggedInAt: Date.now(),
-  });
+  const [user, setUser] = useLocalStorage<User | null>('niti_user_session', null);
+  const [userProfile, setUserProfile] = useLocalStorage<UserProfile | null>('niti_user_profile', null);
+  const [isHolidayMode, setIsHolidayMode] = useLocalStorage<boolean>('niti_is_holiday_mode', false);
 
   const [registeredAccounts, setRegisteredAccounts] = useLocalStorage<Record<string, RegisteredAccount>>('niti_registered_accounts', {});
   const [activeView, setActiveView] = useLocalStorage<ViewType>('niti_active_view', 'overview');
@@ -121,7 +123,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [dinnerDurationMinutes, setDinnerDurationMinutes] = useLocalStorage<number>('niti_dinner_mins', 30);
   const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
 
-  const isAuthenticated = Boolean(user);
+  const currentDay = useMemo<DayOfWeek>(() => {
+    const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[new Date().getDay()];
+  }, []);
+
+  const isWeekend = currentDay === 'Saturday' || currentDay === 'Sunday';
+  const isHoliday = isHolidayMode || isWeekend;
+  const hasOnboarded = Boolean(userProfile?.hasOnboarded);
+
+  const toggleHolidayMode = () => {
+    setIsHolidayMode((prev) => !prev);
+  };
+
+  const completeOnboarding = (profile: UserProfile) => {
+    setUserProfile(profile);
+    setTargetBedtime(profile.targetBedtime);
+    
+    // Absolute zero initialization for new onboarded user
+    setTasks([]);
+
+    // Populate today's lectures from weeklyTimetable for currentDay
+    const todaySched = profile.weeklyTimetable.find((d) => d.day === currentDay);
+    if (todaySched && !todaySched.isRestDay && todaySched.subjects.length > 0) {
+      const newLectures: Lecture[] = todaySched.subjects.map((sub, idx) => ({
+        id: `lec-${Date.now()}-${idx}`,
+        name: sub,
+        code: `${sub.substring(0, 3).toUpperCase()}-10${idx + 1}`,
+        time: `${9 + idx * 2}:00 AM`,
+        durationMinutes: 90,
+        status: 'attended',
+        focusRating: 4,
+      }));
+      setLectures(newLectures);
+    } else {
+      setLectures([]);
+    }
+
+    setUser({
+      id: `user-${Date.now()}`,
+      name: profile.name,
+      email: `${profile.name.toLowerCase().replace(/\s+/g, '.')}@student.edu`,
+      college: 'Engineering Institute',
+      role: 'student',
+      isAdmin: false,
+      loggedInAt: Date.now(),
+      hasOnboarded: true,
+    });
+
+    setActiveView('overview');
+  };
+
+  const resetOnboarding = () => {
+    setUserProfile(null);
+    setIsHolidayMode(false);
+  };
+
+  const isAuthenticated = Boolean(user || userProfile);
 
   const isAdmin = useMemo(() => {
     if (!user) return false;
@@ -279,10 +337,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const availableMs = bedtimeDate.getTime() - now.getTime();
-    const availableHoursBeforeDinner = Math.max(0, Math.round((availableMs / (1000 * 60 * 60)) * 10) / 10);
+    let availableHoursBeforeDinner = Math.max(0, Math.round((availableMs / (1000 * 60 * 60)) * 10) / 10);
     
-    // Net Usable Hours = (Bedtime - Current Time) - dinner break
-    const usableHours = Math.max(0, Math.round((availableHoursBeforeDinner - dinnerMins / 60) * 10) / 10);
+    // Net Usable Hours: On Holidays/Weekends, full day of study with mandatory breaks (6-8 hours max usable capacity)
+    let usableHours: number;
+    if (isHoliday) {
+      availableHoursBeforeDinner = 8;
+      usableHours = Math.max(0, Math.round((8 - dinnerMins / 60) * 10) / 10);
+    } else {
+      usableHours = Math.max(0, Math.round((availableHoursBeforeDinner - dinnerMins / 60) * 10) / 10);
+    }
 
     // Calculate pending non-completed tasks duration in hours
     const pendingMinutes = tasks
@@ -478,6 +542,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user,
         isAuthenticated,
         isAdmin,
+        userProfile,
+        hasOnboarded,
+        completeOnboarding,
+        resetOnboarding,
+        isHoliday,
+        isHolidayMode,
+        toggleHolidayMode,
+        currentDay,
         login,
         guestLogin,
         logout,

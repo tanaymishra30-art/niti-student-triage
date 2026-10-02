@@ -1,3 +1,21 @@
+export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+
+export interface WeeklyScheduleDay {
+  day: DayOfWeek;
+  isRestDay: boolean;
+  subjects: string[];
+}
+
+export interface UserProfile {
+  name: string;
+  targetBedtime: string; // e.g. "23:30"
+  commuteTimeMins: number; // 0-180 mins
+  decompressionBufferMins: number; // 30-120 mins
+  weeklyTimetable: WeeklyScheduleDay[];
+  hasOnboarded: boolean;
+  onboardedAt: number;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -7,6 +25,7 @@ export interface User {
   role?: 'admin' | 'student';
   isAdmin?: boolean;
   loggedInAt: number;
+  hasOnboarded?: boolean;
 }
 
 export interface Task {

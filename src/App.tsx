@@ -8,9 +8,14 @@ import { TasksView } from './views/TasksView';
 import { TriageView } from './views/TriageView';
 import { LoginView } from './views/LoginView';
 import { TriageModal } from './components/TriageModal';
+import { OnboardingWizard } from './components/OnboardingWizard';
 
 const DashboardContent: React.FC = () => {
-  const { isAuthenticated, activeView } = useApp();
+  const { hasOnboarded, completeOnboarding, isAuthenticated, activeView } = useApp();
+
+  if (!hasOnboarded) {
+    return <OnboardingWizard onComplete={completeOnboarding} />;
+  }
 
   if (!isAuthenticated) {
     return <LoginView />;

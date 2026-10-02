@@ -3,7 +3,7 @@ import { Navigation, Home, Clock, CheckCircle2, RotateCcw, ArrowRight } from 'lu
 import { useApp } from '../context/AppContext';
 
 export const TransitTracker: React.FC = () => {
-  const { transitState, startTransit, reachHome, resetTransit, setIsTriageModalOpen } = useApp();
+  const { transitState, startTransit, reachHome, resetTransit, setIsTriageModalOpen, isHoliday } = useApp();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Live timer tick when in transit
@@ -59,8 +59,20 @@ export const TransitTracker: React.FC = () => {
 
       {/* State Machine Action Area */}
       <div className="mt-2">
-        {/* State 1: Morning / Idle */}
-        {transitState.status === 'idle' && (
+        {isHoliday ? (
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-center space-y-2 font-mono text-xs animate-fadeIn">
+            <div className="text-amber-400 font-bold flex items-center justify-center space-x-1.5 text-sm">
+              <span>🌴</span>
+              <span>Commute Dead-Time Paused</span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-sans">
+              No campus transit required today. Transit tracker is hidden during Rest & Holiday Mode.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* State 1: Morning / Idle */}
+            {transitState.status === 'idle' && (
           <div className="space-y-3">
             <button
               onClick={startTransit}
@@ -139,7 +151,9 @@ export const TransitTracker: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
+      </>
+    )}
+  </div>
 
     </div>
   );
