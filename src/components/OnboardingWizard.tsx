@@ -18,11 +18,11 @@ const DEFAULT_TIMETABLE: WeeklyScheduleDay[] = [
 ];
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
-  const { logout } = useApp();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const { userProfile, user, logout } = useApp();
 
-  // Step 1: Identity
-  const [name, setName] = useState('');
+  const initialName = userProfile?.name || user?.name || '';
+  const [name, setName] = useState(initialName);
+  const [step, setStep] = useState<1 | 2 | 3>(initialName.trim() ? 2 : 1);
   
   // Step 2: Bio-Constraints
   const [targetBedtime, setTargetBedtime] = useState('23:30');

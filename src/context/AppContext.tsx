@@ -176,15 +176,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const registeredAcc = registeredAccounts[emailLower];
     const existingAcc = defaultAcc || registeredAcc;
 
-    if (existingAcc) {
-      const isPasswordValid =
-        existingAcc.password === passTrim ||
-        (emailLower === 'tanaymishra30@gmail.com' && (passTrim === 'admin' || passTrim === 'admin123')) ||
-        (emailLower.endsWith('@niti.edu') && (passTrim === 'student' || passTrim === 'student123'));
+    if (!existingAcc) {
+      return { success: false, error: 'No account found with this email address. Please Create an Account first.' };
+    }
 
-      if (!isPasswordValid) {
-        return { success: false, error: 'Incorrect password. Please try again.' };
-      }
+    const isPasswordValid =
+      existingAcc.password === passTrim ||
+      (emailLower === 'tanaymishra30@gmail.com' && (passTrim === 'admin' || passTrim === 'admin123')) ||
+      (emailLower.endsWith('@niti.edu') && (passTrim === 'student' || passTrim === 'student123'));
+
+    if (!isPasswordValid) {
+      return { success: false, error: 'Incorrect password. Please try again.' };
     }
 
     const session: AuthSession = {
