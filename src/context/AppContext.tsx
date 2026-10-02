@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { Task, Lecture, TransitState, User, UserProfile, DayOfWeek } from '../types';
+import { Task, Lecture, TransitState, User, UserProfile, DayOfWeek, AuthSession } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { INITIAL_LECTURES, INITIAL_TASKS, INITIAL_TRANSIT_STATE } from '../utils/demoData';
 
@@ -54,6 +54,7 @@ const DEFAULT_ACCOUNTS: Record<string, RegisteredAccount> = {
 
 interface AppContextType {
   user: User | null;
+  authSession: AuthSession | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
   userProfile: UserProfile | null;
@@ -64,8 +65,9 @@ interface AppContextType {
   isHolidayMode: boolean;
   toggleHolidayMode: () => void;
   currentDay: DayOfWeek;
-  login: (email: string, password: string, name?: string, college?: string, isSignUp?: boolean) => { success: boolean; error?: string };
-  guestLogin: () => void;
+  login: (email: string, password: string) => { success: boolean; error?: string };
+  signup: (email: string, password: string) => { success: boolean; error?: string };
+  googleLogin: () => void;
   logout: () => void;
   activeView: ViewType;
   setActiveView: (view: ViewType) => void;
@@ -110,14 +112,16 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useLocalStorage<User | null>('niti_user_session', null);
+  const [authSession, setAuthSession] = useLocalStorage<AuthSession | null>('niti_auth_session', null);
   const [userProfile, setUserProfile] = useLocalStorage<UserProfile | null>('niti_user_profile', null);
+  const [user, setUser] = useLocalStorage<User | null>('niti_user_session', null);
   const [isHolidayMode, setIsHolidayMode] = useLocalStorage<boolean>('niti_is_holiday_mode', false);
 
   const [registeredAccounts, setRegisteredAccounts] = useLocalStorage<Record<string, RegisteredAccount>>('niti_registered_accounts', {});
   const [activeView, setActiveView] = useLocalStorage<ViewType>('niti_active_view', 'overview');
   const [transitState, setTransitState] = useLocalStorage<TransitState>('niti_transit_state', INITIAL_TRANSIT_STATE);
-  const [tasks, setTasks] = useLocalStorage<Task[]>('niti_tasks', INITIAL_TASKS);
+  const [tasks, setTasks] = useLocalStorage<Task[]>('niti_tasks', []);
+  const [studyDebt, setStudyDebt] = useLocalStorage<number>('niti_study_debt', 0);
   const [lectures, setLectures] = useLocalStorage<Lecture[]>('niti_lectures', INITIAL_LECTURES);
   const [targetBedtime, setTargetBedtime] = useLocalStorage<string>('niti_bedtime', '23:30');
   const [dinnerDurationMinutes, setDinnerDurationMinutes] = useLocalStorage<number>('niti_dinner_mins', 30);
@@ -130,18 +134,151 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isWeekend = currentDay === 'Saturday' || currentDay === 'Sunday';
   const isHoliday = isHolidayMode || isWeekend;
+  const isAuthenticated = Boolean(authSession?.isLoggedIn);
   const hasOnboarded = Boolean(userProfile?.hasOnboarded);
+
+  const isAdmin = useMemo(() => {
+    const emailLower = (authSession?.email || user?.email || '').toLowerCase();
+    return Boolean(
+      user?.role === 'admin' ||
+      user?.isAdmin ||
+      emailLower === 'tanaymishra30@gmail.com' ||
+      emailLower.includes('admin')
+    );
+  }, [authSession, user]);
 
   const toggleHolidayMode = () => {
     setIsHolidayMode((prev) => !prev);
+  };
+
+  const login = (email: string, password: string): { success: boolean; error?: string } => {
+    const emailLower = email.trim().toLowerCase();
+    const passTrim = password.trim();
+
+    if (!emailLower) return { success: false, error: 'Please enter a valid email address.' };
+    if (!passTrim) return { success: false, error: 'Please enter your password.' };
+
+    const defaultAcc = DEFAULT_ACCOUNTS[emailLower];
+    const registeredAcc = registeredAccounts[emailLower];
+    const existingAcc = defaultAcc || registeredAcc;
+
+    if (existingAcc) {
+      const isPasswordValid =
+        existingAcc.password === passTrim ||
+        (emailLower === 'tanaymishra30@gmail.com' && (passTrim === 'admin' || passTrim === 'admin123')) ||
+        (emailLower.endsWith('@niti.edu') && (passTrim === 'student' || passTrim === 'student123'));
+
+      if (!isPasswordValid) {
+        return { success: false, error: 'Incorrect password. Please try again.' };
+      }
+    }
+
+    const session: AuthSession = {
+      email: emailLower,
+      isLoggedIn: true,
+      token: `token-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      loggedInAt: Date.now(),
+    };
+
+    setAuthSession(session);
+
+    setUser({
+      id: `user-${Date.now()}`,
+      name: userProfile?.name || existingAcc?.name || emailLower.split('@')[0],
+      email: emailLower,
+      college: existingAcc?.college || 'Engineering Institute',
+      role: existingAcc?.role || (emailLower.includes('admin') ? 'admin' : 'student'),
+      isAdmin: emailLower.includes('admin') || existingAcc?.role === 'admin',
+      loggedInAt: Date.now(),
+      hasOnboarded,
+    });
+
+    setActiveView('overview');
+    return { success: true };
+  };
+
+  const signup = (email: string, password: string): { success: boolean; error?: string } => {
+    const emailLower = email.trim().toLowerCase();
+    const passTrim = password.trim();
+
+    if (!emailLower) return { success: false, error: 'Please enter a valid email address.' };
+    if (!passTrim || passTrim.length < 4) return { success: false, error: 'Password must be at least 4 characters long.' };
+
+    if (registeredAccounts[emailLower] || DEFAULT_ACCOUNTS[emailLower]) {
+      return { success: false, error: 'An account with this email already exists. Please Sign In instead.' };
+    }
+
+    const nameFromEmail = emailLower.split('@')[0];
+    const newAcc: RegisteredAccount = {
+      password: passTrim,
+      name: nameFromEmail,
+      college: 'Engineering Institute',
+      role: emailLower.includes('admin') ? 'admin' : 'student',
+    };
+
+    setRegisteredAccounts((prev) => ({ ...prev, [emailLower]: newAcc }));
+
+    const session: AuthSession = {
+      email: emailLower,
+      isLoggedIn: true,
+      token: `token-${Date.now()}`,
+      loggedInAt: Date.now(),
+    };
+
+    setAuthSession(session);
+    setUserProfile(null); // Fresh profile with hasOnboarded: false
+    setTasks([]);
+    setStudyDebt(0);
+
+    setUser({
+      id: `user-${Date.now()}`,
+      name: nameFromEmail,
+      email: emailLower,
+      college: 'Engineering Institute',
+      role: newAcc.role,
+      isAdmin: newAcc.role === 'admin',
+      loggedInAt: Date.now(),
+      hasOnboarded: false,
+    });
+
+    return { success: true };
+  };
+
+  const googleLogin = () => {
+    const mockEmail = 'tanay.student@niti.edu';
+    const session: AuthSession = {
+      email: mockEmail,
+      isLoggedIn: true,
+      token: `google-token-${Date.now()}`,
+      loggedInAt: Date.now(),
+    };
+
+    setAuthSession(session);
+    setUser({
+      id: 'google-student-user',
+      name: userProfile?.name || 'Tanay Student',
+      email: mockEmail,
+      college: 'IIT / NIT Engineering Dept',
+      role: 'student',
+      isAdmin: false,
+      loggedInAt: Date.now(),
+      hasOnboarded: Boolean(userProfile?.hasOnboarded),
+    });
+    setActiveView('overview');
+  };
+
+  const logout = () => {
+    setAuthSession(null);
+    setUser(null);
   };
 
   const completeOnboarding = (profile: UserProfile) => {
     setUserProfile(profile);
     setTargetBedtime(profile.targetBedtime);
     
-    // Absolute zero initialization for new onboarded user
+    // Zero out initial tasks and debt for fresh accounts
     setTasks([]);
+    setStudyDebt(0);
 
     // Populate today's lectures from weeklyTimetable for currentDay
     const todaySched = profile.weeklyTimetable.find((d) => d.day === currentDay);
@@ -163,7 +300,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser({
       id: `user-${Date.now()}`,
       name: profile.name,
-      email: `${profile.name.toLowerCase().replace(/\s+/g, '.')}@student.edu`,
+      email: authSession?.email || `${profile.name.toLowerCase().replace(/\s+/g, '.')}@student.edu`,
       college: 'Engineering Institute',
       role: 'student',
       isAdmin: false,
@@ -179,117 +316,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsHolidayMode(false);
   };
 
-  const isAuthenticated = Boolean(user || userProfile);
-
-  const isAdmin = useMemo(() => {
-    if (!user) return false;
-    const emailLower = (user.email || '').toLowerCase();
-    return Boolean(
-      user.role === 'admin' ||
-      user.isAdmin ||
-      emailLower === 'tanaymishra30@gmail.com' ||
-      emailLower.includes('admin')
-    );
-  }, [user]);
-
-  const login = (
-    email: string,
-    password: string,
-    name?: string,
-    college: string = 'Engineering Department',
-    isSignUp: boolean = false
-  ): { success: boolean; error?: string } => {
-    const emailLower = email.trim().toLowerCase();
-    const passTrim = password.trim();
-
-    if (!emailLower) {
-      return { success: false, error: 'Please enter a valid email address.' };
-    }
-    if (!passTrim) {
-      return { success: false, error: 'Please enter your password.' };
-    }
-
-    const defaultAcc = DEFAULT_ACCOUNTS[emailLower];
-    const registeredAcc = registeredAccounts[emailLower];
-    const existingAcc = defaultAcc || registeredAcc;
-
-    if (isSignUp) {
-      if (existingAcc) {
-        return { success: false, error: 'An account with this email already exists. Please Sign In.' };
-      }
-      if (passTrim.length < 4) {
-        return { success: false, error: 'Password must be at least 4 characters long.' };
-      }
-
-      const studentName = (name && name.trim()) || emailLower.split('@')[0] || 'Student User';
-      const isAdminUser = emailLower === 'tanaymishra30@gmail.com' || emailLower.includes('admin');
-      const newAcc: RegisteredAccount = {
-        password: passTrim,
-        name: studentName,
-        college: college.trim() || 'Engineering Institute',
-        role: isAdminUser ? 'admin' : 'student',
-      };
-
-      setRegisteredAccounts((prev) => ({ ...prev, [emailLower]: newAcc }));
-
-      setUser({
-        id: `user-${Date.now()}`,
-        name: studentName,
-        email: emailLower,
-        college: newAcc.college,
-        role: newAcc.role,
-        isAdmin: isAdminUser,
-        loggedInAt: Date.now(),
-      });
-      setActiveView('overview');
-      return { success: true };
-    } else {
-      // Sign In Flow
-      if (!existingAcc) {
-        return { success: false, error: 'No account found with this email. Please switch to "Create Account" tab to register.' };
-      }
-
-      const isPasswordValid =
-        existingAcc.password === passTrim ||
-        (emailLower === 'tanaymishra30@gmail.com' && (passTrim === 'admin' || passTrim === 'admin123')) ||
-        (emailLower.endsWith('@niti.edu') && (passTrim === 'student' || passTrim === 'student123'));
-
-      if (!isPasswordValid) {
-        return { success: false, error: 'Incorrect password. Please verify your credentials and try again.' };
-      }
-
-      const isAdminUser = existingAcc.role === 'admin' || emailLower === 'tanaymishra30@gmail.com' || emailLower.includes('admin');
-      setUser({
-        id: `user-${Date.now()}`,
-        name: existingAcc.name,
-        email: emailLower,
-        college: existingAcc.college,
-        role: isAdminUser ? 'admin' : 'student',
-        isAdmin: isAdminUser,
-        loggedInAt: Date.now(),
-      });
-      setActiveView('overview');
-      return { success: true };
-    }
-  };
-
-  const guestLogin = () => {
-    setUser({
-      id: 'guest-demo-user',
-      name: 'Demo Student',
-      email: 'demo.student@niti.edu',
-      college: 'IIT / NIT Engineering Dept',
-      role: 'student',
-      isAdmin: false,
-      loggedInAt: Date.now(),
-    });
-    setActiveView('overview');
-  };
-
-  const logout = () => {
-    setUser(null);
-  };
-
   // Transit state machine triggers
   const startTransit = () => {
     const now = Date.now();
@@ -303,7 +329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const reachHome = () => {
     const now = Date.now();
-    const startTime = transitState.leftCollegeTime || (now - 45 * 60 * 1000); // fallback 45m
+    const startTime = transitState.leftCollegeTime || (now - 45 * 60 * 1000);
     const diffMinutes = Math.max(1, Math.round((now - startTime) / (1000 * 60)));
 
     setTransitState({
@@ -331,7 +357,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const bedtimeDate = new Date();
     bedtimeDate.setHours(bedHours, bedMins, 0, 0);
 
-    // If bedtime is earlier than current time today or within 10 minutes, assume late night / next morning shift
     if (bedtimeDate.getTime() <= now.getTime() + 10 * 60 * 1000) {
       bedtimeDate.setDate(bedtimeDate.getDate() + 1);
     }
@@ -348,7 +373,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       usableHours = Math.max(0, Math.round((availableHoursBeforeDinner - dinnerMins / 60) * 10) / 10);
     }
 
-    // Calculate pending non-completed tasks duration in hours
     const pendingMinutes = tasks
       .filter((t) => !t.completed && !t.droppedTonight)
       .reduce((sum, t) => sum + t.duration, 0);
@@ -385,7 +409,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             return { ...task, droppedTonight: true };
           }
           if (task.priority === 'P1' && !task.condensed) {
-            const newDuration = Math.max(15, Math.round(task.duration * 0.7)); // Condense by 30%
+            const newDuration = Math.max(15, Math.round(task.duration * 0.7));
             return {
               ...task,
               originalDuration: task.duration,
@@ -472,16 +496,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsTriageModalOpen(false);
   };
 
-  // Memoized Computed Metrics for zero unnecessary re-render overhead
+  // Computed Metrics
   const totalCollegeHours = useMemo(() => {
+    if (isHoliday) return 0;
     return Math.round((lectures
       .filter((l) => l.status === 'attended')
       .reduce((sum, l) => sum + l.durationMinutes, 0) / 60) * 10) / 10;
-  }, [lectures]);
+  }, [lectures, isHoliday]);
 
   const totalTransitHours = useMemo(() => {
+    if (isHoliday) return 0;
     return Math.round(((transitState.commuteDurationMinutes || 0) / 60) * 10) / 10;
-  }, [transitState.commuteDurationMinutes]);
+  }, [transitState.commuteDurationMinutes, isHoliday]);
 
   const totalCompletedStudyHours = useMemo(() => {
     return Math.round((tasks
@@ -501,10 +527,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const focusConversionRate = useMemo(() => {
     const totalActiveHours = totalCollegeHours + totalTransitHours + totalCompletedStudyHours;
+    if (totalActiveHours === 0 && tasks.length === 0) return 100;
     return totalActiveHours > 0
       ? Math.min(100, Math.round((totalCompletedStudyHours / totalActiveHours) * 100))
-      : 0;
-  }, [totalCollegeHours, totalTransitHours, totalCompletedStudyHours]);
+      : 100;
+  }, [totalCollegeHours, totalTransitHours, totalCompletedStudyHours, tasks]);
 
   const totalTasksCount = tasks.length;
   const completedTasksCount = tasks.filter((t) => t.completed).length;
@@ -512,7 +539,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const taskCompletionRate = totalTasksCount > 0
     ? Math.round((completedTasksCount / totalTasksCount) * 100)
-    : 0;
+    : 100;
 
   // Subject Debt Breakdown for Overview graphs
   const subjectDebtBreakdown = useMemo(() => {
@@ -540,6 +567,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         user,
+        authSession,
         isAuthenticated,
         isAdmin,
         userProfile,
@@ -551,7 +579,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleHolidayMode,
         currentDay,
         login,
-        guestLogin,
+        signup,
+        googleLogin,
         logout,
         activeView,
         setActiveView,

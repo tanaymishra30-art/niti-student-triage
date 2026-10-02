@@ -1,5 +1,12 @@
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
 
+export interface AuthSession {
+  email: string;
+  isLoggedIn: boolean;
+  token: string;
+  loggedInAt: number;
+}
+
 export interface WeeklyScheduleDay {
   day: DayOfWeek;
   isRestDay: boolean;

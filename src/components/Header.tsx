@@ -6,10 +6,11 @@ import { getSavedSupabaseConfig } from '../lib/supabase';
 import { formatHours } from '../utils/formatTime';
 
 export const Header: React.FC = () => {
-  const { user, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen, isAdmin } = useApp();
+  const { user, userProfile, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen, isAdmin } = useApp();
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
 
   const isSupabaseConnected = Boolean(getSavedSupabaseConfig());
+  const displayName = userProfile?.name || user?.name || 'Student';
 
   return (
     <header className="border-b border-slate-800 bg-[#0F172A]/90 sticky top-0 z-30 backdrop-blur-md">
@@ -97,25 +98,23 @@ export const Header: React.FC = () => {
           </button>
 
           {/* User Profile Pill & Logout */}
-          {user && (
-            <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-700/80 rounded-xl p-1 pl-2.5 text-xs">
-              <div className="flex items-center space-x-1.5 text-slate-200 font-medium font-sans max-w-[120px] sm:max-w-[160px] truncate">
-                {isAdmin ? (
-                  <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                ) : (
-                  <UserIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                )}
-                <span className="truncate">{user.name}</span>
-              </div>
-              <button
-                onClick={logout}
-                className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
-                title="Log out of student session"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+          <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-700/80 rounded-xl p-1 pl-2.5 text-xs">
+            <div className="flex items-center space-x-1.5 text-slate-200 font-medium font-sans max-w-[140px] sm:max-w-[190px] truncate">
+              {isAdmin ? (
+                <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              ) : (
+                <UserIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              )}
+              <span className="truncate">Welcome back, {displayName}</span>
             </div>
-          )}
+            <button
+              onClick={logout}
+              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+              title="Log out of session"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
         </div>
       </div>

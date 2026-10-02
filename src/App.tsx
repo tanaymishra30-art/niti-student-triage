@@ -6,16 +6,16 @@ import { OverviewView } from './views/OverviewView';
 import { TransitView } from './views/TransitView';
 import { TasksView } from './views/TasksView';
 import { TriageView } from './views/TriageView';
-import { LoginView } from './views/LoginView';
+import { AuthScreen } from './components/AuthScreen';
 import { TriageModal } from './components/TriageModal';
 import { OnboardingWizard } from './components/OnboardingWizard';
 
 const DashboardContent: React.FC = () => {
   const { isAuthenticated, hasOnboarded, completeOnboarding, activeView } = useApp();
 
-  // 1. Not Logged In -> Show <LoginView /> (AuthScreen)
+  // 1. Not Logged In -> Show <AuthScreen />
   if (!isAuthenticated) {
-    return <LoginView />;
+    return <AuthScreen />;
   }
 
   // 2. Logged In + First-Time User (hasOnboarded === false) -> Show <OnboardingWizard />
