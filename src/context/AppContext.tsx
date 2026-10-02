@@ -122,7 +122,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [transitState, setTransitState] = useLocalStorage<TransitState>('niti_transit_state', INITIAL_TRANSIT_STATE);
   const [tasks, setTasks] = useLocalStorage<Task[]>('niti_tasks', []);
   const [studyDebt, setStudyDebt] = useLocalStorage<number>('niti_study_debt', 0);
-  const [lectures, setLectures] = useLocalStorage<Lecture[]>('niti_lectures', INITIAL_LECTURES);
+  const [lectures, setLectures] = useLocalStorage<Lecture[]>('niti_lectures', []);
   const [targetBedtime, setTargetBedtime] = useLocalStorage<string>('niti_bedtime', '23:30');
   const [dinnerDurationMinutes, setDinnerDurationMinutes] = useLocalStorage<number>('niti_dinner_mins', 30);
   const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
@@ -504,8 +504,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetDemoData = () => {
     setTransitState(INITIAL_TRANSIT_STATE);
-    setTasks(INITIAL_TASKS);
-    setLectures(INITIAL_LECTURES);
+    setTasks([]);
+    setLectures([]);
+    setStudyDebt(0);
+    setIsHolidayMode(false);
     setTargetBedtime('23:30');
     setDinnerDurationMinutes(30);
     setActiveView('overview');
