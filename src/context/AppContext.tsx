@@ -27,7 +27,8 @@ export type ViewType = 'overview' | 'transit' | 'tasks' | 'triage';
 interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, name: string, college?: string) => void;
+  isAdmin: boolean;
+  login: (email: string, name: string, college?: string, role?: 'admin' | 'student') => void;
   guestLogin: () => void;
   logout: () => void;
   activeView: ViewType;
@@ -74,10 +75,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useLocalStorage<User | null>('niti_user_session', {
-    id: 'user-demo-1',
-    name: 'Tanay Mishra',
-    email: 'student@college.edu',
+    id: 'user-admin-1',
+    name: 'Tanay Mishra (Admin)',
+    email: 'tanaymishra30@gmail.com',
     college: 'Engineering Institute',
+    role: 'admin',
+    isAdmin: true,
     loggedInAt: Date.now(),
   });
 
@@ -91,12 +94,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isAuthenticated = Boolean(user);
 
-  const login = (email: string, name: string, college: string = 'Engineering Department') => {
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    const emailLower = (user.email || '').toLowerCase();
+    return Boolean(
+      user.role === 'admin' ||
+      user.isAdmin ||
+      emailLower === 'tanaymishra30@gmail.com' ||
+      emailLower.includes('admin')
+    );
+  }, [user]);
+
+  const login = (
+    email: string,
+    name: string,
+    college: string = 'Engineering Department',
+    role: 'admin' | 'student' = 'student'
+  ) => {
+    const emailLower = email.toLowerCase();
+    const isAdminUser = role === 'admin' || emailLower === 'tanaymishra30@gmail.com' || emailLower.includes('admin');
+
     setUser({
       id: `user-${Date.now()}`,
       name,
       email,
       college,
+      role: isAdminUser ? 'admin' : 'student',
+      isAdmin: isAdminUser,
       loggedInAt: Date.now(),
     });
     setActiveView('overview');
@@ -108,6 +132,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: 'Demo Student',
       email: 'demo.student@niti.edu',
       college: 'IIT / NIT Engineering Dept',
+      role: 'student',
+      isAdmin: false,
       loggedInAt: Date.now(),
     });
     setActiveView('overview');
@@ -362,6 +388,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         user,
         isAuthenticated,
+        isAdmin,
         login,
         guestLogin,
         logout,

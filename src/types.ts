@@ -4,6 +4,8 @@ export interface User {
   email: string;
   college?: string;
   rollNo?: string;
+  role?: 'admin' | 'student';
+  isAdmin?: boolean;
   loggedInAt: number;
 }
 

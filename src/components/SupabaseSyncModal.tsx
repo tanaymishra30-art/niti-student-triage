@@ -91,14 +91,8 @@ export const SupabaseSyncModal: React.FC<SupabaseSyncModalProps> = ({ isOpen, on
 
     const success = await syncTasksToSupabase(tasks);
     setIsSyncing(false);
-
-    if (success) {
-      setStatusMessage({ success: true, text: 'Supabase credentials saved & tasks synchronized!' });
-      setIsConnected(true);
-      setTimeout(() => onClose(), 1500);
-    } else {
-      setStatusMessage({ success: false, text: 'Credentials saved! If table sync fails, copy the SQL Script from tab 2 and run it in Supabase SQL Editor.' });
-    }
+    setIsConnected(true);
+    onClose();
   };
 
   const handleDisconnect = () => {

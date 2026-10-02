@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database } from 'lucide-react';
+import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database, Shield } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SupabaseSyncModal } from './SupabaseSyncModal';
 import { getSavedSupabaseConfig } from '../lib/supabase';
 
 export const Header: React.FC = () => {
-  const { user, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen } = useApp();
+  const { user, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen, isAdmin } = useApp();
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
 
   const isSupabaseConnected = Boolean(getSavedSupabaseConfig());
@@ -37,19 +37,21 @@ export const Header: React.FC = () => {
         {/* Quick Metrics & Actions */}
         <div className="flex items-center space-x-2.5 sm:space-x-3">
           
-          {/* Supabase DB Sync Button */}
-          <button
-            onClick={() => setIsSupabaseModalOpen(true)}
-            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-mono transition-all ${
-              isSupabaseConnected
-                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
-                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-            }`}
-            title="Configure Supabase Database Sync"
-          >
-            <Database className={`w-3.5 h-3.5 ${isSupabaseConnected ? 'text-emerald-400' : 'text-slate-400'}`} />
-            <span className="hidden md:inline">{isSupabaseConnected ? 'Supabase Sync 🟢' : 'Connect DB'}</span>
-          </button>
+          {/* Admin-Only Supabase DB Sync Button */}
+          {isAdmin && (
+            <button
+              onClick={() => setIsSupabaseModalOpen(true)}
+              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-mono transition-all ${
+                isSupabaseConnected
+                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+              }`}
+              title="Admin Database Configuration & Supabase Sync"
+            >
+              <Database className={`w-3.5 h-3.5 ${isSupabaseConnected ? 'text-emerald-400' : 'text-amber-400'}`} />
+              <span className="hidden md:inline">{isSupabaseConnected ? 'DB Synced 🟢' : 'Admin DB Config 🔑'}</span>
+            </button>
+          )}
 
           {/* Status Badge */}
           <div className="hidden lg:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 text-xs">
@@ -97,7 +99,11 @@ export const Header: React.FC = () => {
           {user && (
             <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-700/80 rounded-xl p-1 pl-2.5 text-xs">
               <div className="flex items-center space-x-1.5 text-slate-200 font-medium font-sans max-w-[120px] sm:max-w-[160px] truncate">
-                <UserIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                {isAdmin ? (
+                  <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                ) : (
+                  <UserIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                )}
                 <span className="truncate">{user.name}</span>
               </div>
               <button
@@ -113,8 +119,10 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Supabase Database Connection Modal */}
-      <SupabaseSyncModal isOpen={isSupabaseModalOpen} onClose={() => setIsSupabaseModalOpen(false)} />
+      {/* Supabase Database Connection Modal (Admin Only) */}
+      {isAdmin && (
+        <SupabaseSyncModal isOpen={isSupabaseModalOpen} onClose={() => setIsSupabaseModalOpen(false)} />
+      )}
     </header>
   );
 };
