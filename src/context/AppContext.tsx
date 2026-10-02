@@ -66,7 +66,7 @@ interface AppContextType {
   toggleHolidayMode: () => void;
   currentDay: DayOfWeek;
   login: (email: string, password: string) => { success: boolean; error?: string };
-  signup: (email: string, password: string) => { success: boolean; error?: string };
+  signup: (email: string, password: string, name?: string) => { success: boolean; error?: string };
   googleLogin: () => void;
   logout: () => void;
   activeView: ViewType;
@@ -197,7 +197,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true };
   };
 
-  const signup = (email: string, password: string): { success: boolean; error?: string } => {
+  const signup = (email: string, password: string, name?: string): { success: boolean; error?: string } => {
     const emailLower = email.trim().toLowerCase();
     const passTrim = password.trim();
 
@@ -208,12 +208,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, error: 'An account with this email already exists. Please Sign In instead.' };
     }
 
-    const nameFromEmail = emailLower.split('@')[0];
+    const displayName = name?.trim() || emailLower.split('@')[0];
     const newAcc: RegisteredAccount = {
       password: passTrim,
-      name: nameFromEmail,
+      name: displayName,
       college: 'Engineering Institute',
-      role: emailLower.includes('admin') ? 'admin' : 'student',
+      role: emailLower.includes('admin') || emailLower === 'tanaymishra30@gmail.com' ? 'admin' : 'student',
     };
 
     setRegisteredAccounts((prev) => ({ ...prev, [emailLower]: newAcc }));
@@ -226,13 +226,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setAuthSession(session);
-    setUserProfile(null); // Fresh profile with hasOnboarded: false
+    setUserProfile({
+      name: displayName,
+      targetBedtime: '23:30',
+      commuteTimeMins: 45,
+      decompressionBufferMins: 45,
+      weeklyTimetable: [
+        { day: 'Monday', isRestDay: false, subjects: ['DSP', 'CN'] },
+        { day: 'Tuesday', isRestDay: false, subjects: ['OS', 'DBMS'] },
+        { day: 'Wednesday', isRestDay: false, subjects: ['DSP', 'AI'] },
+        { day: 'Thursday', isRestDay: false, subjects: ['CN', 'OS'] },
+        { day: 'Friday', isRestDay: false, subjects: ['DBMS', 'AI'] },
+        { day: 'Saturday', isRestDay: true, subjects: [] },
+        { day: 'Sunday', isRestDay: true, subjects: [] },
+      ],
+      hasOnboarded: false,
+      onboardedAt: Date.now(),
+    });
     setTasks([]);
     setStudyDebt(0);
 
     setUser({
       id: `user-${Date.now()}`,
-      name: nameFromEmail,
+      name: displayName,
       email: emailLower,
       college: 'Engineering Institute',
       role: newAcc.role,
