@@ -1,6 +1,7 @@
 import React from 'react';
 import { PieChart, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatHours } from '../utils/formatTime';
 
 export const TimeAllocationChart: React.FC = () => {
   const { totalCollegeHours, totalTransitHours, totalCompletedStudyHours } = useApp();
@@ -46,7 +47,7 @@ export const TimeAllocationChart: React.FC = () => {
             <div
               style={{ width: `${collegePct}%` }}
               className="bg-indigo-500 hover:bg-indigo-400 h-full rounded-l-lg transition-all duration-500 relative group"
-              title={`College Lectures: ${totalCollegeHours.toFixed(1)}h (${collegePct}%)`}
+              title={`College Lectures: ${formatHours(totalCollegeHours)} (${collegePct}%)`}
             />
           )}
 
@@ -54,7 +55,7 @@ export const TimeAllocationChart: React.FC = () => {
             <div
               style={{ width: `${transitPct}%` }}
               className="bg-amber-500 hover:bg-amber-400 h-full transition-all duration-500 relative group"
-              title={`Transit Dead-Time: ${totalTransitHours.toFixed(1)}h (${transitPct}%)`}
+              title={`Transit Dead-Time: ${formatHours(totalTransitHours)} (${transitPct}%)`}
             />
           )}
 
@@ -62,7 +63,7 @@ export const TimeAllocationChart: React.FC = () => {
             <div
               style={{ width: `${studyPct}%` }}
               className="bg-emerald-500 hover:bg-emerald-400 h-full transition-all duration-500 relative group"
-              title={`Deep Study: ${totalCompletedStudyHours.toFixed(1)}h (${studyPct}%)`}
+              title={`Deep Study: ${formatHours(totalCompletedStudyHours)} (${studyPct}%)`}
             />
           )}
 
@@ -70,7 +71,7 @@ export const TimeAllocationChart: React.FC = () => {
             <div
               style={{ width: `${freePct}%` }}
               className="bg-slate-700/60 hover:bg-slate-700 h-full rounded-r-lg transition-all duration-500 relative group"
-              title={`Unallocated / Free: ${freeHours}h (${freePct}%)`}
+              title={`Unallocated / Free: ${formatHours(freeHours)} (${freePct}%)`}
             />
           )}
         </div>
@@ -81,7 +82,7 @@ export const TimeAllocationChart: React.FC = () => {
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
             <div className="overflow-hidden">
               <span className="text-[10px] text-slate-400 block truncate">College</span>
-              <span className="text-slate-100 font-bold">{totalCollegeHours.toFixed(1)}h</span>
+              <span className="text-slate-100 font-bold">{formatHours(totalCollegeHours)}</span>
             </div>
           </div>
 
@@ -89,7 +90,7 @@ export const TimeAllocationChart: React.FC = () => {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
             <div className="overflow-hidden">
               <span className="text-[10px] text-slate-400 block truncate">Transit</span>
-              <span className="text-slate-100 font-bold">{totalTransitHours.toFixed(1)}h</span>
+              <span className="text-slate-100 font-bold">{formatHours(totalTransitHours)}</span>
             </div>
           </div>
 
@@ -97,7 +98,7 @@ export const TimeAllocationChart: React.FC = () => {
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
             <div className="overflow-hidden">
               <span className="text-[10px] text-slate-400 block truncate">Deep Study</span>
-              <span className="text-slate-100 font-bold">{totalCompletedStudyHours.toFixed(1)}h</span>
+              <span className="text-slate-100 font-bold">{formatHours(totalCompletedStudyHours)}</span>
             </div>
           </div>
 
@@ -105,7 +106,7 @@ export const TimeAllocationChart: React.FC = () => {
             <span className="w-2.5 h-2.5 rounded-full bg-slate-600 shrink-0" />
             <div className="overflow-hidden">
               <span className="text-[10px] text-slate-400 block truncate">Unallocated</span>
-              <span className="text-slate-100 font-bold">{freeHours}h</span>
+              <span className="text-slate-100 font-bold">{formatHours(freeHours)}</span>
             </div>
           </div>
         </div>

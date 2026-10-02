@@ -1,6 +1,7 @@
 import React from 'react';
 import { Gauge, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatHours } from '../utils/formatTime';
 
 export const GuiltMeter: React.FC = () => {
   const { focusConversionRate, totalCompletedStudyHours, totalCollegeHours, totalTransitHours } = useApp();
@@ -46,8 +47,8 @@ export const GuiltMeter: React.FC = () => {
             <span className="text-xs font-sans text-slate-400 font-normal">Conversion</span>
           </div>
           <div className="text-right text-xs font-mono text-slate-400">
-            <div>{totalCompletedStudyHours.toFixed(1)}h Study</div>
-            <div className="text-[10px] text-slate-500">vs {(totalCollegeHours + totalTransitHours).toFixed(1)}h Campus/Transit</div>
+            <div>{formatHours(totalCompletedStudyHours)} Study</div>
+            <div className="text-[10px] text-slate-500">vs {formatHours(totalCollegeHours + totalTransitHours)} Campus/Transit</div>
           </div>
         </div>
 

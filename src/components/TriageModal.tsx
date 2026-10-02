@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Moon, Clock, AlertTriangle, ShieldAlert, CheckCircle2, ArrowRight, Utensils, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatHours } from '../utils/formatTime';
 
 export const TriageModal: React.FC = () => {
   const {
@@ -156,11 +157,11 @@ export const TriageModal: React.FC = () => {
             <div className="flex items-center justify-between text-slate-300">
               <span>Net Usable Study Window:</span>
               <span className="font-bold text-emerald-400 text-xs font-mono">
-                {currentResult.usableHours} Hours
+                {formatHours(currentResult.usableHours)}
               </span>
             </div>
             <p className="text-[10px] text-slate-500">
-              Calculated as: ({currentResult.availableHoursBeforeDinner}h until bedtime [{inputBedtime}]) - {inputDinner}m Dinner
+              Calculated as: ({formatHours(currentResult.availableHoursBeforeDinner)} until bedtime [{inputBedtime}]) - {inputDinner}m Dinner
             </p>
           </div>
 
@@ -180,14 +181,14 @@ export const TriageModal: React.FC = () => {
         <div className="grid grid-cols-2 gap-3 font-mono text-xs">
           <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Net Capacity</span>
-            <span className="text-xl font-bold text-emerald-400">{currentResult.usableHours}h</span>
+            <span className="text-lg font-bold text-emerald-400">{formatHours(currentResult.usableHours)}</span>
             <span className="text-[10px] text-slate-500 block">Usable Tonight</span>
           </div>
 
           <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Pending Task Load</span>
-            <span className={`text-xl font-bold ${currentResult.hasDeficit ? 'text-rose-400' : 'text-slate-200'}`}>
-              {currentResult.pendingTaskHours}h
+            <span className={`text-lg font-bold ${currentResult.hasDeficit ? 'text-rose-400' : 'text-slate-200'}`}>
+              {formatHours(currentResult.pendingTaskHours)}
             </span>
             <span className="text-[10px] text-slate-500 block">Active Tasks</span>
           </div>
@@ -198,7 +199,7 @@ export const TriageModal: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-900/50 space-y-2.5">
             <div className="flex items-center space-x-2 text-rose-400 font-semibold text-xs">
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>Time Deficit Detected: {currentResult.deficitHours}h Over Capacity</span>
+              <span>Time Deficit Detected: {formatHours(currentResult.deficitHours)} Over Capacity</span>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
@@ -220,7 +221,7 @@ export const TriageModal: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-900/50 flex items-center space-x-3 text-xs text-emerald-300">
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
             <p>
-              You have sufficient usable hours ({currentResult.usableHours}h) to complete all active tasks ({currentResult.pendingTaskHours}h) without triage drops!
+              You have sufficient usable hours ({formatHours(currentResult.usableHours)}) to complete all active tasks ({formatHours(currentResult.pendingTaskHours)}) without triage drops!
             </p>
           </div>
         )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Gauge, Clock, Layers, CheckCircle2, TrendingUp, Sparkles, AlertTriangle, ArrowRight, ShieldCheck, PieChart, BookOpen, Navigation } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatHours } from '../utils/formatTime';
 
 export const OverviewView: React.FC = () => {
   const {
@@ -87,8 +88,8 @@ export const OverviewView: React.FC = () => {
           </div>
 
           <div className="text-[11px] font-mono text-slate-400 pt-3 border-t border-slate-800 flex justify-between">
-            <span>{totalCompletedStudyHours.toFixed(1)}h Study</span>
-            <span>{(totalCollegeHours + totalTransitHours).toFixed(1)}h College/Transit</span>
+            <span>{formatHours(totalCompletedStudyHours)} Study</span>
+            <span>{formatHours(totalCollegeHours + totalTransitHours)} College/Transit</span>
           </div>
         </div>
 
@@ -167,8 +168,8 @@ export const OverviewView: React.FC = () => {
           </div>
 
           <div className="my-4 space-y-1">
-            <div className="text-4xl font-extrabold font-mono text-rose-400 tracking-tight flex items-baseline space-x-2">
-              <span>{studyDebtHours}h</span>
+            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-rose-400 tracking-tight flex items-baseline space-x-2">
+              <span>{formatHours(studyDebtHours)}</span>
               <span className="text-xs font-sans text-slate-400 font-normal">Accumulated Debt</span>
             </div>
             <p className="text-xs text-slate-400">
@@ -230,7 +231,7 @@ export const OverviewView: React.FC = () => {
                   <div key={item.subject} className="space-y-1">
                     <div className="flex items-center justify-between text-xs font-mono">
                       <span className="text-slate-200 font-semibold">{item.subject}</span>
-                      <span className="text-slate-400">{item.debtHours}h ({item.count} task{item.count > 1 ? 's' : ''})</span>
+                      <span className="text-slate-400">{formatHours(item.debtHours)} ({item.count} task{item.count > 1 ? 's' : ''})</span>
                     </div>
                     <div className="w-full bg-slate-900 rounded-full h-3.5 p-0.5 border border-slate-800">
                       <div
@@ -271,7 +272,7 @@ export const OverviewView: React.FC = () => {
                 <div
                   style={{ width: `${Math.min(100, Math.round((totalCollegeHours / 16) * 100))}%` }}
                   className="bg-indigo-500 h-full rounded-l-lg transition-all duration-500"
-                  title={`College: ${totalCollegeHours}h`}
+                  title={`College: ${formatHours(totalCollegeHours)}`}
                 />
               )}
 
@@ -279,7 +280,7 @@ export const OverviewView: React.FC = () => {
                 <div
                   style={{ width: `${Math.min(100, Math.round((totalTransitHours / 16) * 100))}%` }}
                   className="bg-amber-500 h-full transition-all duration-500"
-                  title={`Transit: ${totalTransitHours}h`}
+                  title={`Transit: ${formatHours(totalTransitHours)}`}
                 />
               )}
 
@@ -287,7 +288,7 @@ export const OverviewView: React.FC = () => {
                 <div
                   style={{ width: `${Math.min(100, Math.round((totalCompletedStudyHours / 16) * 100))}%` }}
                   className="bg-emerald-500 h-full transition-all duration-500"
-                  title={`Study: ${totalCompletedStudyHours}h`}
+                  title={`Study: ${formatHours(totalCompletedStudyHours)}`}
                 />
               )}
 
@@ -304,7 +305,7 @@ export const OverviewView: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block">College</span>
-                  <span className="text-slate-100 font-bold">{totalCollegeHours}h</span>
+                  <span className="text-slate-100 font-bold">{formatHours(totalCollegeHours)}</span>
                 </div>
               </div>
 
@@ -312,7 +313,7 @@ export const OverviewView: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block">Transit</span>
-                  <span className="text-slate-100 font-bold">{totalTransitHours}h</span>
+                  <span className="text-slate-100 font-bold">{formatHours(totalTransitHours)}</span>
                 </div>
               </div>
 
@@ -320,7 +321,7 @@ export const OverviewView: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block">Deep Study</span>
-                  <span className="text-slate-100 font-bold">{totalCompletedStudyHours}h</span>
+                  <span className="text-slate-100 font-bold">{formatHours(totalCompletedStudyHours)}</span>
                 </div>
               </div>
 
@@ -328,7 +329,7 @@ export const OverviewView: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full bg-slate-600 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block">Unallocated</span>
-                  <span className="text-slate-100 font-bold">{Math.max(0, Math.round((16 - (totalCollegeHours + totalTransitHours + totalCompletedStudyHours)) * 10) / 10)}h</span>
+                  <span className="text-slate-100 font-bold">{formatHours(Math.max(0, 16 - (totalCollegeHours + totalTransitHours + totalCompletedStudyHours)))}</span>
                 </div>
               </div>
             </div>

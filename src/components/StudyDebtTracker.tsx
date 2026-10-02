@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, ArrowDownRight, Layers } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatHours } from '../utils/formatTime';
 
 export const StudyDebtTracker: React.FC = () => {
   const { studyDebtHours, tasks } = useApp();
@@ -40,13 +41,13 @@ export const StudyDebtTracker: React.FC = () => {
           <span className="text-xs text-slate-400 font-mono uppercase tracking-wider block mb-1">
             Current Study Debt
           </span>
-          <div className="text-4xl font-extrabold font-mono text-rose-400 tracking-tight flex items-baseline space-x-2">
-            <span>{studyDebtHours}h</span>
+          <div className="text-2xl sm:text-3xl font-extrabold font-mono text-rose-400 tracking-tight flex items-baseline space-x-2">
+            <span>{formatHours(studyDebtHours)}</span>
             <span className="text-xs font-sans text-slate-400 font-normal">Pending Load</span>
           </div>
         </div>
 
-        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
           <Layers className="w-6 h-6 text-rose-400" />
         </div>
       </div>
@@ -55,17 +56,17 @@ export const StudyDebtTracker: React.FC = () => {
       <div className="grid grid-cols-3 gap-2 mt-3 text-xs font-mono">
         <div className="p-2 rounded bg-rose-950/30 border border-rose-900/40 text-center">
           <span className="text-[10px] text-rose-400 block font-semibold">P0 Urgent</span>
-          <span className="text-slate-100 font-bold text-sm">{p0Debt}h</span>
+          <span className="text-slate-100 font-bold text-xs">{formatHours(p0Debt)}</span>
         </div>
 
         <div className="p-2 rounded bg-emerald-950/30 border border-emerald-900/40 text-center">
           <span className="text-[10px] text-emerald-400 block font-semibold">P1 Sage</span>
-          <span className="text-slate-100 font-bold text-sm">{p1Debt}h</span>
+          <span className="text-slate-100 font-bold text-xs">{formatHours(p1Debt)}</span>
         </div>
 
         <div className="p-2 rounded bg-slate-900/60 border border-slate-800 text-center">
           <span className="text-[10px] text-slate-400 block font-semibold">P2 Defer</span>
-          <span className="text-slate-100 font-bold text-sm">{p2Debt}h</span>
+          <span className="text-slate-100 font-bold text-xs">{formatHours(p2Debt)}</span>
         </div>
       </div>
 

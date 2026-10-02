@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { Task } from '../types';
 import { AddTaskModal } from './AddTaskModal';
 import { EditTaskModal } from './EditTaskModal';
+import { formatHours, formatMinutes } from '../utils/formatTime';
 
 export const TaskBacklog: React.FC = () => {
   const { tasks, toggleTaskComplete, deleteTask, totalPendingTaskHours } = useApp();
@@ -52,7 +53,7 @@ export const TaskBacklog: React.FC = () => {
               Task Backlog & Triage Queue
             </h2>
             <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-slate-700">
-              {(Math.round(totalPendingTaskHours * 10) / 10).toFixed(1)}h active
+              {formatHours(totalPendingTaskHours)} active
             </span>
           </div>
           <p className="text-xs text-slate-400">Completing tasks deducts directly from Study Debt</p>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Moon, Clock, Utensils, AlertTriangle, ShieldAlert, CheckCircle2, ArrowRight, Sparkles, RotateCcw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatHours } from '../utils/formatTime';
 
 export const TriageView: React.FC = () => {
   const {
@@ -149,20 +150,20 @@ export const TriageView: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Net Capacity</span>
-            <span className="text-2xl font-bold text-emerald-400">{currentResult.usableHours}h</span>
+            <span className="text-xl sm:text-2xl font-bold text-emerald-400">{formatHours(currentResult.usableHours)}</span>
             <span className="text-[10px] text-slate-500 block">Usable Window</span>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Active Task Load</span>
-            <span className="text-2xl font-bold text-indigo-400">{currentResult.pendingTaskHours}h</span>
+            <span className="text-xl sm:text-2xl font-bold text-indigo-400">{formatHours(currentResult.pendingTaskHours)}</span>
             <span className="text-[10px] text-slate-500 block">{activeTasksCount} Pending Tasks</span>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Time Deficit</span>
-            <span className={`text-2xl font-bold ${currentResult.hasDeficit ? 'text-rose-400' : 'text-slate-400'}`}>
-              {currentResult.deficitHours}h
+            <span className={`text-xl sm:text-2xl font-bold ${currentResult.hasDeficit ? 'text-rose-400' : 'text-slate-400'}`}>
+              {formatHours(currentResult.deficitHours)}
             </span>
             <span className="text-[10px] text-slate-500 block">{currentResult.hasDeficit ? 'Deficit Over Capacity' : 'No Deficit'}</span>
           </div>
@@ -173,7 +174,7 @@ export const TriageView: React.FC = () => {
           <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-900/50 space-y-3">
             <div className="flex items-center space-x-2 text-rose-400 font-semibold text-xs">
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>Time Deficit Detected: {currentResult.deficitHours}h Over Available Hours</span>
+              <span>Time Deficit Detected: {formatHours(currentResult.deficitHours)} Over Available Hours</span>
             </div>
 
             <ul className="space-y-1.5 text-xs text-slate-300 font-mono pl-1">

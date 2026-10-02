@@ -3,6 +3,7 @@ import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon, Database, Shi
 import { useApp } from '../context/AppContext';
 import { SupabaseSyncModal } from './SupabaseSyncModal';
 import { getSavedSupabaseConfig } from '../lib/supabase';
+import { formatHours } from '../utils/formatTime';
 
 export const Header: React.FC = () => {
   const { user, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen, isAdmin } = useApp();
@@ -72,7 +73,7 @@ export const Header: React.FC = () => {
           <div className="hidden sm:flex items-center space-x-1.5 bg-slate-800/50 px-2.5 py-1.5 rounded-xl border border-slate-700/50 text-xs font-mono">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-slate-400">Debt:</span>
-            <span className="font-bold text-amber-400">{studyDebtHours}h</span>
+            <span className="font-bold text-amber-400">{formatHours(studyDebtHours)}</span>
           </div>
 
           {/* Re-Triage Button */}
