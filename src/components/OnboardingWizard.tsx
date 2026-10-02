@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Zap, User as UserIcon, Clock, Compass, Calendar, ArrowRight, ArrowLeft, Plus, X, Shield, Sparkles, CheckCircle2, Coffee } from 'lucide-react';
 import { UserProfile, WeeklyScheduleDay, DayOfWeek } from '../types';
+import { useApp } from '../context/AppContext';
 
 interface OnboardingWizardProps {
   onComplete: (profile: UserProfile) => void;
@@ -17,6 +18,7 @@ const DEFAULT_TIMETABLE: WeeklyScheduleDay[] = [
 ];
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
+  const { logout } = useApp();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1: Identity
@@ -172,7 +174,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               </div>
             </div>
 
-            <div className="pt-4 flex justify-end">
+            <div className="pt-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={logout}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center space-x-1.5"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back</span>
+              </button>
+
               <button
                 type="button"
                 disabled={!name.trim()}

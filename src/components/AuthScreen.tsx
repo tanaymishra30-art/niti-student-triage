@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Zap, Lock, Mail, User as UserIcon, ArrowRight, AlertCircle, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Zap, Lock, Mail, User as UserIcon, ArrowRight, ArrowLeft, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const AuthScreen: React.FC = () => {
-  const { login, signup, googleLogin, guestLogin } = useApp();
+  const { login, signup, guestLogin } = useApp();
   const [isSignUp, setIsSignUp] = useState(false);
   
   const [name, setName] = useState('');
@@ -15,6 +15,14 @@ export const AuthScreen: React.FC = () => {
   const handleTabSwitch = (signUp: boolean) => {
     setIsSignUp(signUp);
     setErrorMsg(null);
+  };
+
+  const handleBackToSignIn = () => {
+    setIsSignUp(false);
+    setErrorMsg(null);
+    setName('');
+    setPassword('');
+    setConfirmPassword('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -91,8 +99,25 @@ export const AuthScreen: React.FC = () => {
         </div>
 
         {/* Auth Card Panel */}
-        <div className="bg-[#1E293B]/90 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 backdrop-blur-xl">
+        <div className="bg-[#1E293B]/90 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 backdrop-blur-xl relative">
           
+          {/* Top Bar with Back Button */}
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <button
+              type="button"
+              onClick={handleBackToSignIn}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 text-xs font-mono transition-all"
+              title="Reset inputs and go back to Sign In"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Back</span>
+            </button>
+
+            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
+              {isSignUp ? 'Registration Mode' : 'Sign In Mode'}
+            </span>
+          </div>
+
           {/* Sign In vs Register Tab Switcher */}
           <div className="space-y-2">
             <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 text-xs font-mono">
@@ -213,7 +238,7 @@ export const AuthScreen: React.FC = () => {
             </button>
           </form>
 
-          {/* Divider */}
+          {/* Centered OR Divider */}
           <div className="relative flex items-center justify-center my-4">
             <div className="border-t border-slate-800 w-full" />
             <span className="bg-[#1E293B] px-3 text-[10px] font-mono text-slate-500 uppercase tracking-wider relative">
@@ -221,45 +246,14 @@ export const AuthScreen: React.FC = () => {
             </span>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div className="space-y-2.5">
-            {/* Mock Social Button: Continue with Google */}
-            <button
-              type="button"
-              onClick={googleLogin}
-              className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-xs shadow transition-all flex items-center justify-center space-x-2.5 active:scale-98"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-
-            {/* Guest Account Button (Setup Everything Everytime) */}
-            <button
-              type="button"
-              onClick={guestLogin}
-              className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/60 font-bold text-xs shadow transition-all flex items-center justify-center space-x-2 active:scale-98"
-            >
-              <UserIcon className="w-4 h-4 text-emerald-400" />
-              <span>👤 Guest Account (Setup From Scratch)</span>
-            </button>
-          </div>
+          {/* Guest Account Button - Strictly "Guest" */}
+          <button
+            type="button"
+            onClick={guestLogin}
+            className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/60 font-bold text-xs shadow transition-all flex items-center justify-center space-x-2 active:scale-98"
+          >
+            <span>Guest</span>
+          </button>
 
         </div>
 
