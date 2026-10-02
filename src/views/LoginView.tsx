@@ -157,11 +157,6 @@ export const LoginView: React.FC = () => {
                   className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl py-2.5 pl-9 pr-3 text-slate-100 placeholder-slate-500 outline-none transition-all font-mono"
                 />
               </div>
-              {!isSignUp && (
-                <p className="text-[10px] text-slate-500 font-mono mt-1">
-                  Default Admin: <code className="text-amber-400">tanaymishra30@gmail.com</code> / Pass: <code className="text-amber-400">admin123</code>
-                </p>
-              )}
             </div>
 
             {/* Submit Button */}
@@ -182,14 +177,14 @@ export const LoginView: React.FC = () => {
             </span>
           </div>
 
-          {/* Instant 1-Click Demo Login */}
+          {/* Guest Account Login */}
           <button
             type="button"
             onClick={guestLogin}
-            className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 hover:border-amber-500/50 font-bold text-xs shadow transition-all flex items-center justify-center space-x-2"
+            className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/50 font-bold text-xs shadow transition-all flex items-center justify-center space-x-2"
           >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>⚡ Instant Demo Mode (No Sign-Up)</span>
+            <UserIcon className="w-4 h-4 text-emerald-400" />
+            <span>👤 Guest Account (No Sign-Up)</span>
           </button>
 
         </div>
