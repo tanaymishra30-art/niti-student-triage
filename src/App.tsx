@@ -6,10 +6,15 @@ import { OverviewView } from './views/OverviewView';
 import { TransitView } from './views/TransitView';
 import { TasksView } from './views/TasksView';
 import { TriageView } from './views/TriageView';
+import { LoginView } from './views/LoginView';
 import { TriageModal } from './components/TriageModal';
 
 const DashboardContent: React.FC = () => {
-  const { activeView } = useApp();
+  const { isAuthenticated, activeView } = useApp();
+
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30">

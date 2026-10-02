@@ -1,3 +1,12 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  college?: string;
+  rollNo?: string;
+  loggedInAt: number;
+}
+
 export interface Task {
   id: string;
   title: string;

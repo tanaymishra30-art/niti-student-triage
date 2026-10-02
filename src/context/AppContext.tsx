@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { Task, Lecture, TransitState } from '../types';
+import { Task, Lecture, TransitState, User } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { INITIAL_LECTURES, INITIAL_TASKS, INITIAL_TRANSIT_STATE } from '../utils/demoData';
 
@@ -25,6 +25,11 @@ export interface TriageResult {
 export type ViewType = 'overview' | 'transit' | 'tasks' | 'triage';
 
 interface AppContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (email: string, name: string, college?: string) => void;
+  guestLogin: () => void;
+  logout: () => void;
   activeView: ViewType;
   setActiveView: (view: ViewType) => void;
   transitState: TransitState;
@@ -68,6 +73,14 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useLocalStorage<User | null>('niti_user_session', {
+    id: 'user-demo-1',
+    name: 'Tanay Mishra',
+    email: 'student@college.edu',
+    college: 'Engineering Institute',
+    loggedInAt: Date.now(),
+  });
+
   const [activeView, setActiveView] = useLocalStorage<ViewType>('niti_active_view', 'overview');
   const [transitState, setTransitState] = useLocalStorage<TransitState>('niti_transit_state', INITIAL_TRANSIT_STATE);
   const [tasks, setTasks] = useLocalStorage<Task[]>('niti_tasks', INITIAL_TASKS);
@@ -75,6 +88,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [targetBedtime, setTargetBedtime] = useLocalStorage<string>('niti_bedtime', '23:30');
   const [dinnerDurationMinutes, setDinnerDurationMinutes] = useLocalStorage<number>('niti_dinner_mins', 30);
   const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
+
+  const isAuthenticated = Boolean(user);
+
+  const login = (email: string, name: string, college: string = 'Engineering Department') => {
+    setUser({
+      id: `user-${Date.now()}`,
+      name,
+      email,
+      college,
+      loggedInAt: Date.now(),
+    });
+    setActiveView('overview');
+  };
+
+  const guestLogin = () => {
+    setUser({
+      id: 'guest-demo-user',
+      name: 'Demo Student',
+      email: 'demo.student@niti.edu',
+      college: 'IIT / NIT Engineering Dept',
+      loggedInAt: Date.now(),
+    });
+    setActiveView('overview');
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
 
   // Transit state machine triggers
   const startTransit = () => {
@@ -319,6 +360,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        user,
+        isAuthenticated,
+        login,
+        guestLogin,
+        logout,
         activeView,
         setActiveView,
         transitState,

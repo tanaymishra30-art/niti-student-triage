@@ -1,9 +1,9 @@
 import React from 'react';
-import { Compass, RotateCcw, Clock, Zap } from 'lucide-react';
+import { Compass, RotateCcw, Clock, Zap, LogOut, User as UserIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Header: React.FC = () => {
-  const { resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen } = useApp();
+  const { user, logout, resetDemoData, studyDebtHours, transitState, setIsTriageModalOpen } = useApp();
 
   return (
     <header className="border-b border-slate-800 bg-[#0F172A]/90 sticky top-0 z-30 backdrop-blur-md">
@@ -11,7 +11,7 @@ export const Header: React.FC = () => {
         
         {/* Brand & Tagline */}
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-950/40">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-950/40">
             <Zap className="w-5 h-5 text-slate-900 stroke-[2.5]" />
           </div>
           <div>
@@ -30,10 +30,10 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Quick Metrics & Actions */}
-        <div className="flex items-center space-x-3 sm:space-x-4">
+        <div className="flex items-center space-x-2.5 sm:space-x-3">
           
           {/* Status Badge */}
-          <div className="hidden md:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-md border border-slate-700/60 text-xs">
+          <div className="hidden lg:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 text-xs">
             <span className="relative flex h-2 w-2">
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
                 transitState.status === 'in_transit' ? 'bg-amber-400' : 'bg-emerald-400'
@@ -48,7 +48,7 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Quick Study Debt Indicator */}
-          <div className="hidden sm:flex items-center space-x-1.5 bg-slate-800/50 px-2.5 py-1.5 rounded-md border border-slate-700/50 text-xs font-mono">
+          <div className="hidden sm:flex items-center space-x-1.5 bg-slate-800/50 px-2.5 py-1.5 rounded-xl border border-slate-700/50 text-xs font-mono">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-slate-400">Debt:</span>
             <span className="font-bold text-amber-400">{studyDebtHours}h</span>
@@ -57,7 +57,7 @@ export const Header: React.FC = () => {
           {/* Re-Triage Button */}
           <button
             onClick={() => setIsTriageModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-md transition-all shadow-sm active:scale-95"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition-all shadow-sm active:scale-95"
             title="Open Homecoming Triage Modal"
           >
             <Compass className="w-3.5 h-3.5 text-emerald-400" />
@@ -67,12 +67,29 @@ export const Header: React.FC = () => {
           {/* Reset Demo Data Button */}
           <button
             onClick={resetDemoData}
-            className="flex items-center space-x-1 px-2.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 rounded-md transition-colors"
+            className="flex items-center space-x-1 px-2.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 rounded-xl transition-colors"
             title="Reset to default demo data"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden md:inline">Reset</span>
           </button>
+
+          {/* User Profile Pill & Logout */}
+          {user && (
+            <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-700/80 rounded-xl p-1 pl-2.5 text-xs">
+              <div className="flex items-center space-x-1.5 text-slate-200 font-medium font-sans max-w-[120px] sm:max-w-[160px] truncate">
+                <UserIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="truncate">{user.name}</span>
+              </div>
+              <button
+                onClick={logout}
+                className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                title="Log out of student session"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
         </div>
       </div>
