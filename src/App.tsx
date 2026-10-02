@@ -11,15 +11,19 @@ import { TriageModal } from './components/TriageModal';
 import { OnboardingWizard } from './components/OnboardingWizard';
 
 const DashboardContent: React.FC = () => {
-  const { hasOnboarded, completeOnboarding, isAuthenticated, activeView } = useApp();
+  const { isAuthenticated, hasOnboarded, completeOnboarding, activeView } = useApp();
 
+  // 1. Not Logged In -> Show <LoginView /> (AuthScreen)
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
+
+  // 2. Logged In + First-Time User (hasOnboarded === false) -> Show <OnboardingWizard />
   if (!hasOnboarded) {
     return <OnboardingWizard onComplete={completeOnboarding} />;
   }
 
-  if (!isAuthenticated) {
-    return <LoginView />;
-  }
+  // 3. Logged In + Returning User (hasOnboarded === true) -> Show <Dashboard /> directly
 
   return (
     <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30">
