@@ -16,7 +16,17 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, isOpen, onCl
   const [subject, setSubject] = useState('DSP');
   const [duration, setDuration] = useState(45);
   const [priority, setPriority] = useState<'P0' | 'P1' | 'P2'>('P1');
+  const [dueDate, setDueDate] = useState('');
   const [droppedTonight, setDroppedTonight] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (task) {
@@ -24,6 +34,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, isOpen, onCl
       setSubject(task.subject || 'General');
       setDuration(task.duration);
       setPriority(task.priority);
+      setDueDate(task.dueDate || '');
       setDroppedTonight(Boolean(task.droppedTonight));
     }
   }, [task]);
@@ -40,6 +51,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, isOpen, onCl
       subject,
       duration: Number(duration),
       priority,
+      dueDate: dueDate || undefined,
       droppedTonight,
     });
 
@@ -100,6 +112,16 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, isOpen, onCl
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono focus:border-emerald-500 outline-none"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-slate-300 mb-1 font-mono">Target Due Date (Optional)</label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono focus:border-emerald-500 outline-none"
+            />
           </div>
 
           <div>

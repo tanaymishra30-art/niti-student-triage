@@ -93,12 +93,26 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     e.preventDefault();
     const studentName = name.trim() || 'Student';
 
+    // Auto-commit any typed subject inputs before launching engine
+    let finalTimetable = [...timetable];
+    Object.entries(subjectInputs).forEach(([day, text]) => {
+      const val = text.trim();
+      if (val) {
+        finalTimetable = finalTimetable.map((d) => {
+          if (d.day === day && !d.isRestDay && !d.subjects.includes(val)) {
+            return { ...d, subjects: [...d.subjects, val] };
+          }
+          return d;
+        });
+      }
+    });
+
     const profile: UserProfile = {
       name: studentName,
       targetBedtime,
       commuteTimeMins,
       decompressionBufferMins,
-      weeklyTimetable: timetable,
+      weeklyTimetable: finalTimetable,
       hasOnboarded: true,
       onboardedAt: Date.now(),
     };

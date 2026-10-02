@@ -150,6 +150,24 @@ export const TaskBacklog: React.FC = () => {
                         Condensed ({task.originalDuration}m → {task.duration}m)
                       </span>
                     )}
+
+                    {(() => {
+                      const ageDays = Math.floor((Date.now() - (task.createdAt || Date.now())) / (1000 * 60 * 60 * 24));
+                      if (ageDays > 0 && !task.completed) {
+                        return (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            ⏳ Debt Age: {ageDays}d
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {task.dueDate && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                        📅 Due: {task.dueDate}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-3 text-[11px] text-slate-400 mt-1 font-mono">

@@ -87,7 +87,7 @@ interface AppContextType {
   reachHome: () => void;
   resetTransit: () => void;
   calculateTriage: (bedtimeStr?: string, dinnerMins?: number) => TriageResult;
-  applyTriagePlan: (planResult?: TriageResult) => void;
+  applyTriagePlan: (planResult?: TriageResult, customTaskStates?: Record<string, { droppedTonight?: boolean; condensed?: boolean }>) => void;
   toggleLectureStatus: (id: string) => void;
   updateLectureFocus: (id: string, rating: number) => void;
   editLecture: (lecture: Lecture) => void;
@@ -566,12 +566,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  const applyTriagePlan = (planResult?: TriageResult) => {
+  const applyTriagePlan = (
+    planResult?: TriageResult,
+    customTaskStates?: Record<string, { droppedTonight?: boolean; condensed?: boolean }>
+  ) => {
     const currentResult = planResult || calculateTriage(targetBedtime, dinnerDurationMinutes);
 
     setTasks((prev) =>
       prev.map((task) => {
         if (task.completed) return task;
+
+        if (customTaskStates && customTaskStates[task.id] !== undefined) {
+          const override = customTaskStates[task.id];
+          let updatedTask = { ...task };
+          if (override.droppedTonight !== undefined) {
+            updatedTask.droppedTonight = override.droppedTonight;
+          }
+          if (override.condensed !== undefined) {
+            if (override.condensed && !updatedTask.condensed) {
+              updatedTask.originalDuration = updatedTask.duration;
+              updatedTask.duration = Math.max(15, Math.round(updatedTask.duration * 0.7));
+              updatedTask.condensed = true;
+            } else if (!override.condensed && updatedTask.condensed) {
+              updatedTask.duration = updatedTask.originalDuration || updatedTask.duration;
+              updatedTask.condensed = false;
+            }
+          }
+          return updatedTask;
+        }
 
         if (currentResult.hasDeficit) {
           if (task.priority === 'P2') {

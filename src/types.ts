@@ -45,6 +45,7 @@ export interface Task {
   droppedTonight?: boolean;
   condensed?: boolean;
   originalDuration?: number;
+  dueDate?: string;
   createdAt: number;
 }
 

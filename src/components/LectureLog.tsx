@@ -1,7 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Star, CheckCircle, XCircle, Clock, Plus, X, Sun, Trash2, Calendar, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatHours } from '../utils/formatTime';
+
+const formatTimeTo12h = (time24: string) => {
+  if (!time24) return '';
+  const [hStr, mStr] = time24.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
+};
+
+const calcDuration = (start24: string, end24: string) => {
+  if (!start24 || !end24) return 90;
+  const [sh, sm] = start24.split(':').map(Number);
+  const [eh, em] = end24.split(':').map(Number);
+  const startMins = sh * 60 + sm;
+  const endMins = eh * 60 + em;
+  const diff = endMins - startMins;
+  return diff > 0 ? diff : 90;
+};
 
 export const LectureLog: React.FC = () => {
   const { lectures, toggleLectureStatus, updateLectureFocus, addLecture, deleteLecture, totalCollegeHours, isHoliday, toggleHolidayMode, currentDay } = useApp();
@@ -9,7 +29,8 @@ export const LectureLog: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [time, setTime] = useState('04:00 PM - 05:30 PM');
+  const [startTime, setStartTime] = useState('16:00');
+  const [endTime, setEndTime] = useState('17:30');
   const [durationMinutes, setDurationMinutes] = useState(90);
 
   // Scope Prompt Modal State
@@ -20,14 +41,35 @@ export const LectureLog: React.FC = () => {
     lectureName?: string;
   } | null>(null);
 
+  useEffect(() => {
+    if (pendingAction) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [pendingAction]);
+
+  const handleStartTimeChange = (val: string) => {
+    setStartTime(val);
+    setDurationMinutes(calcDuration(val, endTime));
+  };
+
+  const handleEndTimeChange = (val: string) => {
+    setEndTime(val);
+    setDurationMinutes(calcDuration(startTime, val));
+  };
+
   const handleAddInitiate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
+    const formattedTime = `${formatTimeTo12h(startTime)} - ${formatTimeTo12h(endTime)}`;
+
     const lectureData = {
       name: name.trim(),
       code: code.trim() || 'CLASS',
-      time,
+      time: formattedTime,
       durationMinutes: Number(durationMinutes),
       status: 'attended' as const,
       focusRating: 3,
@@ -207,23 +249,39 @@ export const LectureLog: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="Time slot (04:00 PM - 05:30 PM)"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100 font-mono text-[11px] outline-none focus:border-indigo-500"
-                />
-                <input
-                  type="number"
-                  placeholder="Duration mins"
-                  min="15"
-                  max="240"
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100 font-mono outline-none focus:border-indigo-500"
-                />
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] font-mono text-slate-400 mb-0.5">Start Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={startTime}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100 font-mono text-[11px] outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono text-slate-400 mb-0.5">End Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={endTime}
+                    onChange={(e) => handleEndTimeChange(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100 font-mono text-[11px] outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono text-slate-400 mb-0.5">Duration (mins)</label>
+                  <input
+                    type="number"
+                    placeholder="Duration mins"
+                    min="15"
+                    max="300"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                    className="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100 font-mono outline-none focus:border-indigo-500"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2 pt-1">

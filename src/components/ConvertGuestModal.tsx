@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 interface ConvertGuestModalProps {
@@ -12,7 +12,17 @@ export const ConvertGuestModal: React.FC<ConvertGuestModalProps> = ({ isOpen, on
   const [name, setName] = useState(userProfile?.name || 'Guest Student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -91,13 +101,21 @@ export const ConvertGuestModal: React.FC<ConvertGuestModalProps> = ({ isOpen, on
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-3 text-slate-100 font-mono focus:border-emerald-500 outline-none"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-9 text-slate-100 font-mono focus:border-emerald-500 outline-none"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors p-0.5"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

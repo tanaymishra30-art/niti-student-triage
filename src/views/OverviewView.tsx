@@ -1,10 +1,11 @@
 import React from 'react';
-import { Gauge, Clock, Layers, CheckCircle2, TrendingUp, Sparkles, AlertTriangle, ArrowRight, ShieldCheck, PieChart, BookOpen, Navigation } from 'lucide-react';
+import { Gauge, Clock, Layers, CheckCircle2, TrendingUp, Sparkles, AlertTriangle, ArrowRight, ShieldCheck, PieChart, BookOpen, Navigation, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatHours } from '../utils/formatTime';
 
 export const OverviewView: React.FC = () => {
   const {
+    lectures,
     focusConversionRate,
     taskCompletionRate,
     studyDebtHours,
@@ -19,6 +20,24 @@ export const OverviewView: React.FC = () => {
     setIsTriageModalOpen,
     transitState,
   } = useApp();
+
+  const subjectFocusAnalytics = React.useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    lectures.forEach((lec) => {
+      if (lec.status === 'attended') {
+        const key = lec.name;
+        if (!map[key]) map[key] = { total: 0, count: 0 };
+        map[key].total += lec.focusRating;
+        map[key].count += 1;
+      }
+    });
+
+    return Object.entries(map).map(([subject, data]) => ({
+      subject,
+      avgRating: Math.round((data.total / data.count) * 10) / 10,
+      count: data.count,
+    }));
+  }, [lectures]);
 
   const getEfficiencyColor = (rate: number) => {
     if (rate >= 50) return { text: 'text-emerald-400', stroke: '#10B981', label: 'High Focus' };
@@ -336,6 +355,62 @@ export const OverviewView: React.FC = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Card C: Subject Focus Rating Analytics */}
+      <div className="bg-[#1E293B]/90 rounded-2xl p-6 border border-slate-700/60 shadow-xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-slate-100 font-sans">
+                Subject Focus Rating Analytics
+              </h3>
+              <p className="text-xs text-slate-400">Average lecture engagement & focus scores</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveView('transit')}
+            className="text-xs text-amber-400 hover:text-amber-300 font-mono font-medium flex items-center space-x-1"
+          >
+            <span>Lecture Log</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+          {subjectFocusAnalytics.length === 0 ? (
+            <div className="col-span-full text-center py-6 text-slate-500 text-xs font-mono">
+              No lecture focus ratings recorded for today yet.
+            </div>
+          ) : (
+            subjectFocusAnalytics.map((item) => (
+              <div key={item.subject} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-xs text-slate-200 font-sans">{item.subject}</span>
+                  <span className="text-[10px] font-mono text-slate-400">({item.count} class{item.count > 1 ? 'es' : ''})</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-3.5 h-3.5 ${
+                          star <= Math.round(item.avgRating)
+                            ? 'text-amber-400 fill-amber-400'
+                            : 'text-slate-700'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="font-mono text-xs font-bold text-amber-400">{item.avgRating} / 5.0</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Navigation Quick Jumps Bar */}
